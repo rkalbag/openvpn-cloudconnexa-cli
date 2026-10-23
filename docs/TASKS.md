@@ -20,9 +20,9 @@ Work top to bottom. Each step ends with tests passing and this file updated.
 - [x] Redaction test: secret and token never appear in error strings or debug logs
 
 ## 2. Config + keychain
-- [ ] Config read/write per OS path; file mode 0600
-- [ ] Keychain wrapper with a fake for tests
-- [ ] Credential age tracking for `doctor`
+- [x] Config read/write per OS path; file mode 0600
+- [x] Keychain wrapper with a fake for tests
+- [x] Credential age tracking for `doctor` (estimated from the login time; the API does not expose expiry)
 
 ## 3. Commands
 - [ ] `login` (interactive + flags + `--secret-stdin`), validates via token + regions, topology warning
