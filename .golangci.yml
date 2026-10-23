@@ -17,6 +17,12 @@ linters:
     gosec:
       excludes:
         - G204 # ccx deliberately execs the system ssh with user-chosen args
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters: [gosec]
+      - linters: [revive]
+        text: "that stutters"
 formatters:
   enable:
     - gofmt

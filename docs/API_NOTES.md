@@ -11,6 +11,7 @@ Sources: `api/v1.json` (project copy of the OpenAPI spec), the Admin Portal of a
   - `expires_in` is typed `string` in `OAuthResponse` but the example is the number `43199`. Decode both a JSON number and a numeric string.
   - Cache the token in memory; refresh ~5 min before expiry. Never persist it.
 - Header: `Authorization: Bearer <token>`.
+- Retries (ccx policy): 429 is retried for every method; 5xx and network errors only for GET/PUT/DELETE, never for POST (a failed create may still have created the host).
 - Rate limits: undocumented. Some 429s say "retry after 1 minute". Back off exponentially; honour `Retry-After` (v1.json does not declare a `Retry-After` header anywhere).
 
 ## Errors (from v1.json)
@@ -34,7 +35,7 @@ Sources: `api/v1.json` (project copy of the OpenAPI spec), the Admin Portal of a
 | Get / update / delete host | `GET` / `PUT` / `DELETE /api/v1/hosts/{id}` | Delete returns 204 and removes connectors, applications, IP services; revokes connector profiles |
 | Get connector | `GET /api/v1/hosts/connectors/{id}` | `HostConnectorResponse`; cheaper than listing for `ccx status` |
 | List connectors | `GET /api/v1/hosts/connectors?hostId=&page=&size=` | `HostConnectorResponse`: `id`, `networkItemId`, `networkItemType`, `name`, `description`, `vpnRegionId`, `ipV4Address`, `ipV6Address`, `connectionStatus` (`ONLINE`/`OFFLINE`), `licensed`. There is **no suspended/active field**; whether `licensed=false` means suspended is **VERIFY live** |
-| Profile token | `POST /api/v1/hosts/connectors/{id}/profile/encrypt` | No request body. 200 body is a bare `string`, content type `*/*`: accept raw text or a JSON-quoted string. A new token invalidates the previous one |
+| Profile token | `POST /api/v1/hosts/connectors/{id}/profile/encrypt` | No request body. 200 body is a bare `string`, content type `*/*`: accept raw text or a JSON-quoted string. A new token invalidates the previous one. ccx rejects tokens outside `[A-Za-z0-9._~+/=:-]` (16–4096 chars) because they are pasted into a shell command: **VERIFY live** that real tokens fit |
 | .ovpn profile (fallback) | `POST /api/v1/hosts/connectors/{id}/profile` | Returns the .ovpn as a string. `DELETE` on the same path revokes it |
 | Suspend / activate | `PUT /api/v1/hosts/connectors/{id}/suspend`, `/activate` | No body either way; 200 with empty body. Suspended connectors free their seat |
 | IP services | `POST /api/v1/hosts/ip-services?hostId=` (`hostId` required) | Body `HostIpServiceRequest`: `name`, `description`, `config`. Returns `HostIpServiceResponse` (201). See "IP service config" below |

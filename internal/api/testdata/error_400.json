@@ -1,0 +1,5 @@
+{
+  "errorMessage": "Validation failed",
+  "statusError": "BAD_REQUEST",
+  "errorDetails": {"domain": [{"errorCode": "INVALID", "message": "must be a valid domain", "params": {}}]}
+}

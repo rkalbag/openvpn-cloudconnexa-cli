@@ -10,14 +10,14 @@ Work top to bottom. Each step ends with tests passing and this file updated.
 - [x] goreleaser config (archives + Homebrew tap + checksums); `scripts/install.sh` shipped as a release asset too (uses `homebrew_casks`; `brews` is deprecated)
 
 ## 1. API client (`internal/api`)
-- [ ] Config struct: base URL from Cloud ID; injectable `http.Client` and base URL for tests
-- [ ] OAuth token fetch + in-memory cache + refresh before expiry; try form body, fall back to query params (log which worked at debug level, never the values)
-- [ ] Error mapping: 401, 403, 404, 409, 429, 5xx → typed errors with user-facing hints
-- [ ] Retry with exponential backoff + jitter on 429/5xx (max 5), honour `Retry-After`
-- [ ] Generic paginator (`page` from 0, `size` 1000)
-- [ ] Methods: `Regions`, `Topology`, `CreateHost`, `ListHosts`, `GetHost`, `DeleteHost`, `ListConnectors`, `ProfileToken`, `SuspendConnector`, `ActivateConnector`, `CreateIPService`
-- [ ] `httptest` fixtures shaped from v1.json for every method, including 429 and 401 cases
-- [ ] Redaction test: secret and token never appear in error strings or debug logs
+- [x] Config struct: base URL from Cloud ID; injectable `http.Client` and base URL for tests
+- [x] OAuth token fetch + in-memory cache + refresh before expiry; try form body, fall back to query params (log which worked at debug level, never the values)
+- [x] Error mapping: 401, 403, 404, 409, 429, 5xx → typed errors with user-facing hints
+- [x] Retry with exponential backoff + jitter on 429/5xx (max 5), honour `Retry-After` (5xx and network errors are retried only for GET/PUT/DELETE: a 5xx on `POST /hosts` may already have created the host, and a blind retry could leave a seat-consuming duplicate)
+- [x] Generic paginator (`page` from 0, `size` 1000)
+- [x] Methods: `Regions`, `Topology`, `CreateHost`, `ListHosts`, `GetHost`, `DeleteHost`, `ListConnectors`, `ProfileToken`, `SuspendConnector`, `ActivateConnector`, `CreateIPService`
+- [x] `httptest` fixtures shaped from v1.json for every method, including 429 and 401 cases
+- [x] Redaction test: secret and token never appear in error strings or debug logs
 
 ## 2. Config + keychain
 - [ ] Config read/write per OS path; file mode 0600

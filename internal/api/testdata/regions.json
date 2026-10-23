@@ -1,0 +1,5 @@
+[
+  {"id": "us-east-1", "continent": "North America", "country": "United States", "countryIso": "US", "regionName": "New York"},
+  {"id": "eu-central-1", "continent": "Europe", "country": "Germany", "countryIso": "DE", "regionName": "Frankfurt"},
+  {"continent": "Europe", "country": "Nowhere", "countryIso": "XX", "regionName": "missing id is dropped"}
+]
