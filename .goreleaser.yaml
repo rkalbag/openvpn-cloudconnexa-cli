@@ -1,0 +1,35 @@
+version: 2
+project_name: ccx
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - main: ./cmd/ccx
+    env: [CGO_ENABLED=0]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X github.com/org/ccx/internal/cli.Version={{.Version}} -X github.com/org/ccx/internal/cli.InstallRef={{.Tag}}
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files: [LICENSE, NOTICE, README.md]
+checksum:
+  name_template: checksums.txt
+release:
+  extra_files:
+    - glob: scripts/install.sh
+homebrew_casks:
+  - repository:
+      owner: org # TODO: real org
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: https://github.com/org/ccx
+    description: Tailscale-simple server access for CloudConnexa (unofficial)
+    license: Apache-2.0

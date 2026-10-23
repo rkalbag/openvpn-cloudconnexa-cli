@@ -1,0 +1,6 @@
+/dist/
+/ccx
+/ccx.exe
+*.test
+*.out
+.DS_Store
