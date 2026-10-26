@@ -119,7 +119,24 @@ apt_codename() {
 }
 
 # Package commands never read stdin: under `curl | bash` stdin is this script.
-apt_get() { DEBIAN_FRONTEND=noninteractive apt-get -y -q "$@" </dev/null; }
+# On a freshly booted server, unattended-upgrades holds the apt locks for a
+# while: installs wait for the dpkg lock, and updates are retried.
+APT_LOCK_TIMEOUT=300
+APT_UPDATE_TRIES=6
+APT_UPDATE_DELAY=10
+apt_get() {
+  DEBIAN_FRONTEND=noninteractive apt-get -y -q -o "DPkg::Lock::Timeout=$APT_LOCK_TIMEOUT" "$@" </dev/null
+}
+apt_update() {
+  local i
+  for ((i = 1; i <= APT_UPDATE_TRIES; i++)); do
+    apt_get update && return 0
+    [ "$i" -lt "$APT_UPDATE_TRIES" ] || break
+    say "apt is busy (first-boot updates?); retrying in ${APT_UPDATE_DELAY}s"
+    sleep "$APT_UPDATE_DELAY"
+  done
+  return 1
+}
 dnf_() {
   if command -v dnf >/dev/null; then
     dnf -y "$@" </dev/null
@@ -132,7 +149,7 @@ install_apt() {
   local family="$1" codename
   codename="$(apt_codename)"
   say "Adding the OpenVPN apt repository ($codename)"
-  apt_get update
+  apt_update || die "apt update failed; check this server's network and package sources"
   apt_get install curl ca-certificates
   if [ "$family" = debian ]; then
     # The portal installs policykit-1; Debian 13 replaced it with polkitd.
@@ -142,7 +159,7 @@ install_apt() {
   curl -fsSL "$APT_KEY_URL" -o "$APT_ETC/keyrings/openvpn.asc"
   echo "deb [signed-by=/etc/apt/keyrings/openvpn.asc] $APT_REPO_URL $codename main" \
     >"$APT_ETC/sources.list.d/openvpn-packages.list"
-  apt_get update || die "apt update failed; the OpenVPN repository may not support '$codename' yet"
+  apt_update || die "apt update failed; the OpenVPN repository may not support '$codename' yet"
   say "Installing python3-openvpn-connector-setup"
   apt_get install python3-openvpn-connector-setup
 }

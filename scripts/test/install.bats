@@ -34,6 +34,7 @@ run_main() {
   stub apt-get "$READS_STDIN"
   stub curl 'while [ $# -gt 0 ]; do [ "$1" = -o ] && echo KEY >"$2"; shift; done'
   stub dnf "$READS_STDIN"
+  stub sleep
   stub subscription-manager
   stub uname 'echo x86_64'
   stub openvpn-connector-setup 'echo "baseurl=$CLOUDCONNEXA_BASEURL" >>'"$LOG"'
@@ -168,7 +169,7 @@ load_script() {
   os_release ID=ubuntu VERSION_ID='"24.04"' VERSION_CODENAME=noble
   run_main "$TOKEN" <<<"rest of the piped script"
   [ "$status" -eq 0 ]
-  grep -q "^apt-get -y -q install python3-openvpn-connector-setup$" "$LOG"
+  grep -qx "apt-get -y -q -o DPkg::Lock::Timeout=300 install python3-openvpn-connector-setup" "$LOG"
   absent "policykit-1"
   grep -qx "deb \[signed-by=/etc/apt/keyrings/openvpn.asc\] https://packages.openvpn.net/openvpn3/debian noble main" \
     "$APT_ETC/sources.list.d/openvpn-packages.list"
@@ -177,6 +178,32 @@ load_script() {
   absent "^stdin="
   # The token is never printed.
   [[ "$output" != *"$TOKEN"* ]]
+}
+
+@test "main: apt update is retried while apt is busy" {
+  os_release ID=ubuntu VERSION_CODENAME=noble
+  run_main "$TOKEN"
+  # Fail the first two updates, as when first-boot upgrades hold the lock.
+  stub apt-get 'f='"$BATS_TEST_TMPDIR"'/fails; n=$(cat "$f" 2>/dev/null || echo 0); if [ "$1 $2 $3 $4 $5" = "-y -q -o DPkg::Lock::Timeout=300 update" ] && [ "$n" -lt 2 ]; then echo $((n + 1)) >"$f"; exit 100; fi'
+  : >"$LOG"
+  PATH="$STUBS:$PATH" CCX_INSTALL_NO_MAIN= run bash "$SCRIPT" "$TOKEN"
+  [ "$status" -eq 0 ]
+  [ "$(grep -c "^sleep 10$" "$LOG")" -eq 2 ]
+  [[ "$output" == *"apt is busy"* ]]
+  grep -qx "openvpn-connector-setup --token $TOKEN" "$LOG"
+}
+
+@test "main: apt update gives up after repeated failures" {
+  os_release ID=ubuntu VERSION_CODENAME=noble
+  run_main "$TOKEN"
+  stub apt-get 'exit 100'
+  : >"$LOG"
+  PATH="$STUBS:$PATH" CCX_INSTALL_NO_MAIN= run bash "$SCRIPT" "$TOKEN"
+  [ "$status" -eq 1 ]
+  [ "$(grep -c "^apt-get .* update$" "$LOG")" -eq 6 ]
+  [ "$(grep -c "^sleep" "$LOG")" -eq 5 ]
+  [[ "$output" == *"apt update failed"* ]]
+  absent "openvpn-connector-setup"
 }
 
 @test "main: Debian installs policykit and passes --force" {
