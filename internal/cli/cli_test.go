@@ -14,10 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/org/ccx/internal/api"
-	"github.com/org/ccx/internal/config"
-	"github.com/org/ccx/internal/fakeapi"
-	"github.com/org/ccx/internal/keychain"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/api"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/config"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/fakeapi"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/keychain"
 )
 
 const cloudID = "acme"
@@ -251,7 +251,7 @@ func TestAddDefault(t *testing.T) {
 		t.Fatalf("services: %+v", svcs)
 	}
 	tok := h.fake.ProfileToken(web.Connectors[0].ID)
-	want := "Run this on web1 (a new token invalidates this one):\n  curl -fsSL https://raw.githubusercontent.com/org/ccx/main/scripts/install.sh | sudo bash -s -- " + tok + "\n"
+	want := "Run this on web1 (a new token invalidates this one):\n  curl -fsSL https://raw.githubusercontent.com/rkalbag/openvpn-cloudconnexa-cli/main/scripts/install.sh | sudo bash -s -- " + tok + "\n"
 	if !strings.HasPrefix(h.out.String(), want) {
 		t.Fatalf("output:\n%s\nwant prefix:\n%s", h.out.String(), want)
 	}

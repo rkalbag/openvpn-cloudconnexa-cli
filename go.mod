@@ -1,4 +1,4 @@
-module github.com/org/ccx
+module github.com/rkalbag/openvpn-cloudconnexa-cli
 
 go 1.26.0
 

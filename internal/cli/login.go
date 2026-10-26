@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/org/ccx/internal/api"
-	"github.com/org/ccx/internal/config"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/api"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/config"
 )
 
 // v1.json patterns for OAuth credentials.

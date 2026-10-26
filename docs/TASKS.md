@@ -3,7 +3,7 @@
 Work top to bottom. Each step ends with tests passing and this file updated.
 
 ## 0. Repo setup
-- [x] `go mod init github.com/<org>/ccx`; add cobra, go-keyring, go-toml/v2 (module is `github.com/org/ccx` until the org is known: `<` is not legal in a module path; replace `github.com/org/` repo-wide. Go directive is 1.26 because current x/sys and x/term need it)
+- [x] `go mod init github.com/<org>/ccx`; add cobra, go-keyring, go-toml/v2 (module is `github.com/rkalbag/openvpn-cloudconnexa-cli`, the GitHub repo; the binary is still `ccx`. Go directive is 1.26 because current x/sys and x/term need it)
 - [x] `LICENSE` (Apache-2.0 standard text), `NOTICE` ("ccx — Copyright <year> <author>"), README from `README.md` draft
 - [x] Copy `api/v1.json` into the repo (from the user's project files)
 - [x] CI (GitHub Actions): build 5 targets, `go test ./...` on ubuntu/macos/windows, golangci-lint (plus shellcheck + bats)

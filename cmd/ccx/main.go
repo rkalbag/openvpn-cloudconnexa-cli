@@ -5,7 +5,7 @@ package main
 import (
 	"os"
 
-	"github.com/org/ccx/internal/cli"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/cli"
 )
 
 func main() {

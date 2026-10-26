@@ -13,7 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/org/ccx/internal/api"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/api"
 )
 
 // statusPollInterval is how often `ccx status --wait` re-reads the connector.

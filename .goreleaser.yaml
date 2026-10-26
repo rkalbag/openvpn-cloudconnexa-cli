@@ -8,7 +8,7 @@ builds:
     env: [CGO_ENABLED=0]
     flags: [-trimpath]
     ldflags:
-      - -s -w -X github.com/org/ccx/internal/cli.Version={{.Version}} -X github.com/org/ccx/internal/cli.InstallRef={{.Tag}}
+      - -s -w -X github.com/rkalbag/openvpn-cloudconnexa-cli/internal/cli.Version={{.Version}} -X github.com/rkalbag/openvpn-cloudconnexa-cli/internal/cli.InstallRef={{.Tag}}
     goos: [darwin, linux, windows]
     goarch: [amd64, arm64]
     ignore:
@@ -27,9 +27,9 @@ release:
     - glob: scripts/install.sh
 homebrew_casks:
   - repository:
-      owner: org # TODO: real org
+      owner: rkalbag
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    homepage: https://github.com/org/ccx
+    homepage: https://github.com/rkalbag/openvpn-cloudconnexa-cli
     description: Tailscale-simple server access for CloudConnexa (unofficial)
     license: Apache-2.0

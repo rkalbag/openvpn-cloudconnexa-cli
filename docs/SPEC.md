@@ -44,7 +44,7 @@ After a one-time portal setup, adding a Linux server takes **one command on the 
 6. Print exactly:
    ```
    Run this on <name> (a new token invalidates this one):
-     curl -fsSL https://raw.githubusercontent.com/<org>/ccx/<tag>/scripts/install.sh | sudo bash -s -- <TOKEN>
+     curl -fsSL https://raw.githubusercontent.com/rkalbag/openvpn-cloudconnexa-cli/<tag>/scripts/install.sh | sudo bash -s -- <TOKEN>
    ```
    `<tag>` is the release tag baked in at build time (ldflags); dev builds use `main`.
 7. With `--push user@host`: run the install over SSH instead of printing it (uses the system `ssh`). The token is sent on the SSH session's stdin (`install.sh -`), never on the remote command line.

@@ -16,14 +16,13 @@ import (
 
 	"golang.org/x/term"
 
-	"github.com/org/ccx/internal/api"
-	"github.com/org/ccx/internal/config"
-	"github.com/org/ccx/internal/keychain"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/api"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/config"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/keychain"
 )
 
-// RepoOwner is the GitHub owner of the ccx repo, used in install lines.
-// TODO: set to the real org (also update the module path).
-var RepoOwner = "org"
+// RepoSlug is the GitHub owner/repo that serves scripts/install.sh.
+var RepoSlug = "rkalbag/openvpn-cloudconnexa-cli"
 
 // descriptionPrefix marks hosts created by ccx.
 const descriptionPrefix = "[ccx]"
@@ -234,7 +233,7 @@ func installLine(token api.Secret) string {
 }
 
 func installScriptURL() string {
-	return fmt.Sprintf("https://raw.githubusercontent.com/%s/ccx/%s/scripts/install.sh", RepoOwner, InstallRef)
+	return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/scripts/install.sh", RepoSlug, InstallRef)
 }
 
 // printInstall prints the install instructions. This and printing in

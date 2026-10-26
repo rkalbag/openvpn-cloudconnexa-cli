@@ -8,9 +8,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/org/ccx/internal/api"
-	"github.com/org/ccx/internal/config"
-	"github.com/org/ccx/internal/keychain"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/api"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/config"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/keychain"
 )
 
 func newLogoutCmd(a *app) *cobra.Command {

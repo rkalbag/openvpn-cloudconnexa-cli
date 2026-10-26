@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/org/ccx/internal/api"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/api"
 )
 
 // parseServices turns `ccx add` service arguments into an IP service config.

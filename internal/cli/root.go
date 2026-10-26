@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Set at build time via -ldflags "-X github.com/org/ccx/internal/cli.Version=... -X ...InstallRef=...".
+// Set at build time via -ldflags "-X github.com/rkalbag/openvpn-cloudconnexa-cli/internal/cli.Version=... -X ...InstallRef=...".
 var (
 	// Version is the ccx release version.
 	Version = "dev"

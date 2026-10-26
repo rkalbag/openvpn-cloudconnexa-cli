@@ -15,7 +15,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/org/ccx/internal/api"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/api"
 )
 
 // Credentials accepted by the fake token endpoint.

@@ -15,7 +15,7 @@
 2. Choose a lifetime (1 year recommended) and these permissions: Host – Modify, Connector Profile – Modify, Region – Read Only, Settings – Read Only.
 3. Install ccx and log in:
    ```
-   brew install <org>/tap/ccx      # or download a release binary
+   brew install rkalbag/tap/ccx      # or download a release binary
    ccx login
    ```
    Your client secret is stored in your OS keychain, never on disk.
@@ -24,7 +24,7 @@
 ```
 $ ccx add web1              # or: ccx add web1 ssh http https  (only those ports)
 Run this on web1 (a new token invalidates this one):
-  curl -fsSL https://raw.githubusercontent.com/<org>/ccx/<tag>/scripts/install.sh | sudo bash -s -- <TOKEN>
+  curl -fsSL https://raw.githubusercontent.com/rkalbag/openvpn-cloudconnexa-cli/<tag>/scripts/install.sh | sudo bash -s -- <TOKEN>
 
 # paste that on the server, then:
 $ ccx status web1 --wait 2m

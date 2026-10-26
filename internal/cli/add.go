@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/org/ccx/internal/api"
+	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/api"
 )
 
 // nameRe is a DNS label: lowercase letters, digits, hyphens, 1–63 chars,
