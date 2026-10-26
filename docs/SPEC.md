@@ -78,8 +78,7 @@ After a one-time portal setup, adding a Linux server takes **one command on the 
 
 ## Server bootstrap (`scripts/install.sh`)
 - Usage: `sudo bash install.sh <TOKEN|-> [--force]` (also via `curl | sudo bash -s -- <TOKEN>`). `-` reads the token from stdin (used by `--push`).
-- Phase 1 implements Debian/Ubuntu/Raspberry Pi OS only; RHEL-family distros exit with "not yet supported" until the portal scripts can be fetched (section 5).
-- Detect distro from `/etc/os-release`; mirror the portal's own install steps (see API_NOTES, "Server bootstrap").
+- Detect distro from `/etc/os-release`; mirror the portal's own install steps for each supported distro (see API_NOTES, "Server bootstrap"), without prompts.
 - Install `python3-openvpn-connector-setup` from `packages.openvpn.net`, then run
   `CLOUDCONNEXA_BASEURL='https://network-gateway.openvpn.com/network-gate/api/v1/profiles/' openvpn-connector-setup --token "$TOKEN"`.
 - If a connector profile already exists, require `--force` (passed through to the tool).

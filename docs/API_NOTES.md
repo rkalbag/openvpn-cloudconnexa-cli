@@ -77,7 +77,15 @@ sudo CLOUDCONNEXA_BASEURL='https://network-gateway.openvpn.com/network-gate/api/
 - `openvpn-connector-setup` accepts `--token TOKEN_VALUE` (non-interactive), plus `--name`, `--force`, `--mode` (`systemd-unit` default, or `autoload`), `--no-start`, `--dco`, `--version`.
 - Token format: decryption key + 40-char file reference. The tool downloads the encrypted profile from `CLOUDCONNEXA_BASEURL + fileref`, decrypts it, imports it into openvpn3 and starts a systemd unit.
 - The package's built-in default base URL is `network-management-gw.openvpn.com`, but the portal sets `network-gateway.openvpn.com`. Always set `CLOUDCONNEXA_BASEURL` like the portal does.
-- Other distros: the portal lists AlmaLinux 8/9, Debian, Fedora, Raspberry Pi OS, RHEL 8/9, Rocky 8/9, Ubuntu 20.04/22.04/24.04. **VERIFY** each distro's script (URL pattern appears to be `.../scripts/<slug>/host/<slug>.sh`, e.g. `ubuntu-24-04`) and copy its repo setup into `install.sh`. RHEL-family uses a dnf/yum repo instead of apt.
+- Other distros: **verified 2026-10-24** by fetching `https://network-gateway.openvpn.com/network-gate/api/v1/scripts/<slug>/host/<slug>.sh` (all `VERSION 1.0.6`). Slugs: `ubuntu-20-04`, `ubuntu-22-04`, `ubuntu-24-04`, `debian`, `raspberry`, `rhel-8`, `rhel-9`, `alma-8`, `alma-9`, `rocky-8`, `rocky-9`, `fedora`. Differences from the Ubuntu script:
+  - Ubuntu 20.04/22.04/24.04: identical.
+  - `debian`, `raspberry`: same apt steps, plus `policykit-1` with `curl` (Debian 13 replaced `policykit-1` with `polkitd`; install.sh falls back to it).
+  - `rhel-8`: `yum localinstall -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm`, `subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms` (hard-coded x86_64; install.sh uses `uname -m`), then `yum install -y https://packages.openvpn.net/openvpn-openvpn3-epel-repo-1-1.noarch.rpm` and `python3-openvpn-connector-setup`.
+  - `rhel-9`: the same without CodeReady Builder, EPEL 9.
+  - `rocky-8` = `alma-8` (byte-identical): `yum install -y epel-release`, `yum config-manager --set-enabled powertools`, then the openvpn3 EPEL repo RPM and the package.
+  - `rocky-9` = `alma-9`: `epel-release` only, then the same.
+  - `fedora`: `yum install -y yum-plugin-copr`, `yum copr enable dsommers/openvpn3` (prompts without `-y`), then the package. install.sh installs `dnf-command(copr)` instead, which works with dnf4 and dnf5.
+  - Every script ends with the same interactive `openvpn-connector-setup` call; install.sh adds `--token`.
 
 ## Open items to verify early
 1. Token endpoint accepts credentials in a form body. (v1.json documents query params only; live check needed.)
