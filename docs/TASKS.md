@@ -25,17 +25,17 @@ Work top to bottom. Each step ends with tests passing and this file updated.
 - [x] Credential age tracking for `doctor` (estimated from the login time; the API does not expose expiry)
 
 ## 3. Commands
-- [ ] `login` (interactive + flags + `--secret-stdin`), validates via token + regions, topology warning
-- [ ] `add` with rollback on failure; `--service`, `--domain`, `--region`, `--push`
-- [ ] `ls` (`--all`, `--json`), `status` (`--wait`)
-- [ ] `token`, `sleep`, `wake`, `rm` (confirm, `--yes`, `--force`)
-- [ ] `ssh` (DNS first, tunnel IP fallback)
-- [ ] `logout`, `version`, `doctor`
+- [x] `login` (interactive + flags + `--secret-stdin`), validates via token + regions, topology warning (also `--lifetime`; the old keychain item is removed when the credential changes)
+- [x] `add` with rollback on failure; `--service`, `--domain`, `--region`, `--push` (refuses duplicate names/domains; after a 5xx/timeout on `POST /hosts` it looks for and deletes a host the request may have created)
+- [x] `ls` (`--all`, `--json`), `status` (`--wait`; exit code 2 when not ONLINE). `ls` shows `connectionStatus` only: whether `licensed=false` means suspended is still VERIFY
+- [x] `token`, `sleep`, `wake`, `rm` (confirm, `--yes`, `--force`; all refuse non-ccx hosts without `--force`)
+- [x] `ssh` (DNS first, tunnel IP fallback; `ccx ssh [user@]name -- args`, exit code passed through)
+- [x] `logout`, `version`, `doctor`
 
 ## 4. Server bootstrap (`scripts/install.sh`)
-- [ ] Debian/Ubuntu path (mirrors the portal script; adds `--token`)
-- [ ] Fetch the portal scripts for RHEL 8/9, AlmaLinux, Rocky, Fedora, Debian, Raspberry Pi OS; implement each repo setup
-- [ ] `shellcheck` clean; bats tests for argument parsing and distro detection (no network)
+- [x] Debian/Ubuntu path (mirrors the portal script; adds `--token`; non-interactive, package tools never read stdin so `curl | bash` is safe, all work inside `main` so a truncated download runs nothing)
+- [x] Fetch the portal scripts for RHEL 8/9, AlmaLinux, Rocky, Fedora, Debian, Raspberry Pi OS; implement each repo setup (all v1.0.6; summary in API_NOTES. Only Ubuntu 24.04 will be tested live in section 5; the rest are untested on real machines)
+- [x] `shellcheck` clean; bats tests for argument parsing and distro detection (no network), plus whole-script runs with stubbed package tools
 
 ## 5. Live validation (with the user, test account + disposable VM)
 - [ ] User creates Essential/trial credentials with the minimum permissions; runs `ccx login` (user types the secret)
