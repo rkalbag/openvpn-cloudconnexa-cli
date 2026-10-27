@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -38,10 +39,13 @@ func newAddCmd(a *app) *cobra.Command {
 		Long: `Add a Linux server: creates a CloudConnexa host with one connector and one IP
 service, then prints the command to paste on the server.
 
-Services limit which traffic reaches the host (default: all traffic):
-  ccx add web1                     all traffic
-  ccx add web1 ssh http https      only SSH, HTTP and HTTPS
+Services define the host's IP service (default: any):
+  ccx add web1                     any
+  ccx add web1 ssh http https      SSH, HTTP and HTTPS
   ccx add db1 ssh tcp:5432         SSH and TCP 5432
+With the default Full Mesh topology every port on the host is reachable and
+services are not enforced. They take effect when the topology is Custom and
+an access group grants the IP service.
 Predefined services: ` + strings.ToLower(strings.Join(api.NamedServiceTypes, ", ")) + `.
 Also tcp:<port>, tcp:<lo>-<hi>, udp:<port>, icmp and any.
 
@@ -144,8 +148,22 @@ func (a *app) add(ctx context.Context, name string, serviceArgs []string, o addO
 	if o.push == "" {
 		a.printInstall(name, token)
 	}
+	a.noteServicesNotEnforced(ctx, s, services)
 	a.printf("Once online: `ccx status %s`, then `ssh user@%s`\n", name, domain)
 	return nil
+}
+
+// noteServicesNotEnforced tells the user that a service list restricts
+// nothing under Full Mesh, so it is not mistaken for a firewall.
+func (a *app) noteServicesNotEnforced(ctx context.Context, s *session, services api.ServiceConfig) {
+	if slices.Equal(services.ServiceTypes, []string{api.ServiceAny}) {
+		return
+	}
+	// Best effort: login already warned if the topology cannot be read.
+	if topo, err := s.api.Topology(ctx); err == nil && topo == api.TopologyFullMesh {
+		fmt.Fprintf(a.errOut, "Note: the topology is Full Mesh, so every port on this host is reachable; "+
+			"%s is only enforced through access groups with Custom topology.\n", describeServices(services))
+	}
 }
 
 // finishAdd runs the steps after host creation and returns the profile token.

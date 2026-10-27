@@ -35,7 +35,7 @@ flowchart LR
 In CloudConnexa terms, the Droplet becomes a **Host** with:
 - a **connector** (the tunnel from the Droplet);
 - a **domain** (`web1.internal`) that CloudConnexa DNS resolves for connected users;
-- an **IP service** that says which traffic may reach it (here, SSH only).
+- an **IP service** that describes what runs on it (here, SSH). Access groups use it to decide who may reach which ports. Under the default **Full Mesh** topology it isn't enforced, and every port on the host is reachable by your connected users.
 
 ### Where ccx fits
 
@@ -186,11 +186,14 @@ On your laptop:
 ccx add web1 ssh
 ```
 
-The `ssh` argument creates an IP service that allows **only SSH (TCP 22)** to the host. Leave it out to allow all traffic, or list more, e.g. `ccx add web1 ssh https tcp:5432`.
+The `ssh` argument names the host's IP service: SSH (TCP 22). Leave it out for *any*, or list more, e.g. `ccx add web1 ssh https tcp:5432`.
+
+> **Full Mesh means every port.** With CloudConnexa's default Full Mesh topology, connected users can reach *every* port on `web1`, not just SSH; ccx prints a note saying so. To actually limit users to SSH, switch the topology to **Custom** and create an access group that grants your user group the `web1-services` IP service. The Droplet's own firewall rules are untouched either way: nothing from the public internet gets in.
 
 ```text
 Run this on web1 (a new token invalidates this one):
   curl -fsSL https://raw.githubusercontent.com/rkalbag/openvpn-cloudconnexa-cli/main/scripts/install.sh | sudo bash -s -- <TOKEN>
+Note: the topology is Full Mesh, so every port on this host is reachable; SSH is only enforced through access groups with Custom topology.
 Once online: `ccx status web1`, then `ssh user@web1.internal`
 ```
 
@@ -198,7 +201,7 @@ Behind that one command, ccx:
 1. checked that no host named `web1` or domain `web1.internal` already exists;
 2. created the Host `web1` with domain `web1.internal`, marked `[ccx]` in its description;
 3. created its connector `web1-connector` in your default region;
-4. created the IP service `web1-services` allowing SSH;
+4. created the IP service `web1-services` for SSH (used by access groups when the topology is Custom);
 5. generated a **one-time connector token**, printed only here.
 
 > Treat that line like a password until it has been used. Running `ccx token web1` generates a new one and invalidates the old.

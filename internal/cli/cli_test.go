@@ -255,6 +255,9 @@ func TestAddDefault(t *testing.T) {
 	if !strings.HasPrefix(h.out.String(), want) {
 		t.Fatalf("output:\n%s\nwant prefix:\n%s", h.out.String(), want)
 	}
+	if strings.Contains(h.err.String(), "Full Mesh") {
+		t.Errorf("Full Mesh note for the default service: %s", h.err.String())
+	}
 	if strings.Count(h.out.String(), "curl ") != 1 || strings.Contains(h.err.String(), tok) {
 		t.Fatalf("token printed more than once:\n%s\n%s", h.out.String(), h.err.String())
 	}
@@ -267,6 +270,9 @@ func TestAddServicesDomainRegion(t *testing.T) {
 	h := newHarness(t)
 	h.login()
 	h.mustRun("", "add", "db1", "ssh,tcp:5432", "--service", "icmp", "--domain", "db.example.internal.", "--region", "us-east-1")
+	if !strings.Contains(h.err.String(), "every port on this host is reachable") {
+		t.Errorf("no Full Mesh note: %s", h.err.String())
+	}
 	db := h.host("db1")
 	if db.Domain != "db.example.internal" || db.Connectors[0].VPNRegionID != "us-east-1" {
 		t.Fatalf("host: %+v", db)
@@ -276,6 +282,16 @@ func TestAddServicesDomainRegion(t *testing.T) {
 		cfg.CustomServiceTypes[0].Protocol != "TCP" || *cfg.CustomServiceTypes[0].Port[0].Value != 5432 ||
 		cfg.CustomServiceTypes[1].Protocol != "ICMP" {
 		t.Fatalf("config: %+v", cfg)
+	}
+}
+
+func TestAddNoNoteWithCustomTopology(t *testing.T) {
+	h := newHarness(t)
+	h.login()
+	h.fake.Topology = api.TopologyCustom
+	h.mustRun("", "add", "web1", "ssh")
+	if strings.Contains(h.err.String(), "Full Mesh") {
+		t.Fatalf("note under Custom topology: %s", h.err.String())
 	}
 }
 

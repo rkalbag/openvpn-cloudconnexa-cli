@@ -38,8 +38,9 @@ After a one-time portal setup, adding a Linux server takes **one command on the 
    - Services come from the positional args after `<name>` plus any `--service` flags (same syntax; commas also accepted, e.g. `ccx add web1 ssh,http,https`).
    - A named service (`ssh`, `http`, `https`, `rdp`, `dns`, … — any `serviceTypes` value from v1.json except `ANY`/`CUSTOM`, case-insensitive) goes into `serviceTypes`.
    - `tcp:<port>`, `udp:<port>`, `tcp:<lo>-<hi>` or `icmp` goes into `customServiceTypes` (with `CUSTOM` in `serviceTypes`).
-   - No services given: default `serviceTypes: ["ANY"]` (all traffic to the host).
-   - Example: `ccx add web1 ssh http https` → host `web1.internal`, one IP service allowing only SSH (22), HTTP (80), HTTPS (443).
+   - No services given: default `serviceTypes: ["ANY"]`.
+   - Example: `ccx add web1 ssh http https` → host `web1.internal`, one IP service for SSH (22), HTTP (80), HTTPS (443).
+   - IP services are enforced only through access groups with Custom topology. Under Full Mesh every port on the host is reachable (verified 27 Oct 2026), so when services are given and the topology is `FULL_MESH`, print a note saying so.
 5. `POST /api/v1/hosts/connectors/{connectorId}/profile/encrypt` → token string.
 6. Print exactly:
    ```
