@@ -7,7 +7,7 @@ After a one-time portal setup, adding a Linux server takes **one command on the 
 1. Sign up for CloudConnexa on **Essential or higher**, or use the 14-day trial.
 2. Admin Portal → **API & Logs → API → Create Credentials**. Lifetime: 2 weeks / 1 month / 6 months / 1 year. Recommend 1 year for a laptop.
 3. Permissions (minimum): **Host – Modify**, **Connector Profile – Modify**, **Region – Read Only**, **Settings – Read Only**. Optional: Allowed IPs.
-4. If an "Enable API" toggle appears after creating credentials, turn it on. (VERIFY: the toggle was not visible before the first credential existed.)
+4. The "Enable API to activate authentication credentials" toggle appears once the first credential exists and is switched on automatically (verified 27 Oct 2026); it only needs checking if valid credentials are rejected.
 5. Laptop joins CloudConnexa normally with OpenVPN Connect (user profile). ccx does not manage the laptop's VPN connection in Phase 1.
 6. Install ccx and run `ccx login`.
 

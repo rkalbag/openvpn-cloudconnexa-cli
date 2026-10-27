@@ -85,7 +85,7 @@ In the CloudConnexa Admin Portal (`https://<your-cloud-id>.openvpn.com`):
    - **Region – Read Only**
    - **Settings – Read Only**
 4. Save, and copy the **client ID** and **client secret**. The secret is shown once.
-5. If an **Enable API** toggle appears on the page, turn it on.
+5. The page now shows **Enable API to activate authentication credentials**. CloudConnexa switches it on automatically when you create your first credential; just check that it's on.
 
 > Your **Cloud ID** is the first part of your portal address: for `https://acme.openvpn.com` it is `acme`.
 

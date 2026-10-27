@@ -93,4 +93,4 @@ sudo CLOUDCONNEXA_BASEURL='https://network-gateway.openvpn.com/network-gate/api/
 3. Whether a host with no IP service is reachable under Full Mesh.
 4. ~~Portal and API accept `web1.internal` as a host domain.~~ **Settled live 27 Oct 2026:** accepted, and it resolves on a laptop connected with OpenVPN Connect (`ssh root@web1.internal` worked).
 5. Profile token lifetime (undocumented; tokens are single-active).
-6. Whether an "Enable API" toggle must be switched on after creating credentials.
+6. ~~Whether an "Enable API" toggle must be switched on after creating credentials.~~ **Settled live 27 Oct 2026:** the API page shows "Enable API to activate authentication credentials", and it is switched ON automatically when the first credential is created. No action needed; if API calls return 401 with valid credentials, check that it is still on.
