@@ -58,7 +58,7 @@ ccx creates the Host, connector and IP service through the CloudConnexa API, and
 - **A CloudConnexa user account for yourself.** The account owner already has one; anyone else needs an invitation from an admin. You'll connect your laptop with it in Step 2.
 - **A DigitalOcean account**, plus `doctl` if you want the command-line route. Every step also works in the DigitalOcean control panel.
 - **An SSH key** added to your DigitalOcean account.
-- **One free CloudConnexa seat.** A connector uses a seat from the moment it is created until it is suspended or deleted.
+- **One free CloudConnexa seat.** A connector uses a seat from the moment it is created.
 
 ## The scenario
 
@@ -361,4 +361,4 @@ Two trade-offs:
 
 ---
 
-*Found a bug or want another distro or cloud covered? Open an issue at [github.com/rkalbag/openvpn-cloudconnexa-cli](https://github.com/rkalbag/openvpn-cloudconnexa-cli/issues).*
+*Found a bug or want another distro? Open an issue at [github.com/rkalbag/openvpn-cloudconnexa-cli](https://github.com/rkalbag/openvpn-cloudconnexa-cli/issues).*

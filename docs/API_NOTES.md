@@ -35,7 +35,7 @@ Sources: `api/v1.json` (project copy of the OpenAPI spec), the Admin Portal of a
 | Get / update / delete host | `GET` / `PUT` / `DELETE /api/v1/hosts/{id}` | Delete returns 204 and removes connectors, applications, IP services; revokes connector profiles |
 | Get connector | `GET /api/v1/hosts/connectors/{id}` | `HostConnectorResponse`; cheaper than listing for `ccx status` |
 | List connectors | `GET /api/v1/hosts/connectors?hostId=&page=&size=` | `HostConnectorResponse`: `id`, `networkItemId`, `networkItemType`, `name`, `description`, `vpnRegionId`, `ipV4Address`, `ipV6Address`, `connectionStatus` (`ONLINE`/`OFFLINE`), `licensed`. There is **no suspended/active field**; whether `licensed=false` means suspended is **VERIFY live** |
-| Profile token | `POST /api/v1/hosts/connectors/{id}/profile/encrypt` | No request body. 200 body is a bare `string`, content type `*/*`: accept raw text or a JSON-quoted string. A new token invalidates the previous one. ccx rejects tokens outside `[A-Za-z0-9._~+/=:-]` (16–4096 chars) because they are pasted into a shell command: **VERIFY live** that real tokens fit |
+| Profile token | `POST /api/v1/hosts/connectors/{id}/profile/encrypt` | No request body. 200 body is a bare `string`, content type `*/*`: accept raw text or a JSON-quoted string. A new token invalidates the previous one. ccx rejects tokens outside `[A-Za-z0-9._~+/=:-]` (16–4096 chars) because they are pasted into a shell command: **Settled live 27 Oct 2026:** real tokens fit (`ccx add` accepted one and the server enrolled with it) |
 | .ovpn profile (fallback) | `POST /api/v1/hosts/connectors/{id}/profile` | Returns the .ovpn as a string. `DELETE` on the same path revokes it |
 | Suspend / activate | `PUT /api/v1/hosts/connectors/{id}/suspend`, `/activate` | No body either way; 200 with empty body. Suspended connectors free their seat |
 | IP services | `POST /api/v1/hosts/ip-services?hostId=` (`hostId` required) | Body `HostIpServiceRequest`: `name`, `description`, `config`. Returns `HostIpServiceResponse` (201). See "IP service config" below |
@@ -47,12 +47,12 @@ Sources: `api/v1.json` (project copy of the OpenAPI spec), the Admin Portal of a
 - `serviceTypes[]`: enum `ANY`, `CUSTOM`, `BGP`, `DHCP`, `DNS`, `FTP`, `HTTP`, `HTTPS`, `IMAP`, `IMAPS`, `NTP`, `POP3`, `POP3S`, `RDP`, `SMTP`, `SMTPS`, `SNMP`, `SSH`, `TELNET`, `TFTP`.
 - `customServiceTypes[]` (`CustomServiceTypeRequest`): `protocol` (`TCP` \| `UDP` \| `ICMP`), `port[]` and `icmpType[]` of `RangeInteger` (`value`, or `lowerValue` + `upperValue`).
 - "Allow all traffic" = `{"serviceTypes": ["ANY"]}`. `--service tcp:22` = `{"serviceTypes": ["CUSTOM"], "customServiceTypes": [{"protocol": "TCP", "port": [{"value": 22}]}]}` (whether `CUSTOM` must be listed alongside `customServiceTypes` is **VERIFY live**).
-- Named types (`SSH`, `HTTP`, `HTTPS`, …) are assumed to mean their well-known ports (22, 80, 443, …); v1.json does not list the ports — **VERIFY live**.
+- Named types (`SSH`, `HTTP`, `HTTPS`, …) are assumed to mean their well-known ports (22, 80, 443, …); v1.json does not list the ports. **Settled live for `SSH`** (27 Oct 2026: `ccx add web1 ssh` allowed SSH on 22); others still **VERIFY**.
 - Default when `ccx add` gets no services: `{"serviceTypes": ["ANY"]}` (decided 23 Oct 2026; open item 3 still to be checked live).
 
 ## Names
 - Setting `domain` on the host at creation makes it reachable by that name for connected users (CloudConnexa DNS). No separate DNS record is needed.
-- Default suffix is `internal` (e.g. `web1.internal`), decided 23 Oct 2026. `.cloud` was dropped because it is a public TLD and a ccx name could shadow a real public site while connected; `.internal` is reserved for private use. The suffix stays configurable. **VERIFY** the portal accepts a two-label name like `web1.internal`.
+- Default suffix is `internal` (e.g. `web1.internal`), decided 23 Oct 2026. `.cloud` was dropped because it is a public TLD and a ccx name could shadow a real public site while connected; `.internal` is reserved for private use. The suffix stays configurable. Settled live 27 Oct 2026: the API accepts a two-label name like `web1.internal`.
 
 ## Seats and limits (Essential)
 - A seat = an active user or a connector. A connector uses a seat **from creation**, online or not, until suspended or deleted.
@@ -91,6 +91,6 @@ sudo CLOUDCONNEXA_BASEURL='https://network-gateway.openvpn.com/network-gate/api/
 1. Token endpoint accepts credentials in a form body. (v1.json documents query params only; live check needed.)
 2. ~~`GET` topology endpoint exists.~~ **Settled from v1.json:** yes, `GET /api/v1/settings/wpc/topology` → string `FULL_MESH` \| `CUSTOM`.
 3. Whether a host with no IP service is reachable under Full Mesh.
-4. Portal and API accept `web1.internal` as a host domain.
+4. ~~Portal and API accept `web1.internal` as a host domain.~~ **Settled live 27 Oct 2026:** accepted, and it resolves on a laptop connected with OpenVPN Connect (`ssh root@web1.internal` worked).
 5. Profile token lifetime (undocumented; tokens are single-active).
 6. Whether an "Enable API" toggle must be switched on after creating credentials.

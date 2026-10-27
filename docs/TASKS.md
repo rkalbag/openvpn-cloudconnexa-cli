@@ -38,11 +38,11 @@ Work top to bottom. Each step ends with tests passing and this file updated.
 - [x] `shellcheck` clean; bats tests for argument parsing and distro detection (no network), plus whole-script runs with stubbed package tools
 
 ## 5. Live validation (with the user, test account + disposable VM)
-- [ ] User creates Essential/trial credentials with the minimum permissions; runs `ccx login` (user types the secret)
-- [ ] Resolve the "Open items to verify early" list in `docs/API_NOTES.md`; update notes
-- [ ] `ccx add web1` → paste on Ubuntu 24.04 VM → ONLINE → `ssh user@web1.cloud` from the laptop
+- [x] User creates Essential/trial credentials with the minimum permissions; runs `ccx login` (user types the secret). Done 27 Oct 2026
+- [ ] Resolve the "Open items to verify early" list in `docs/API_NOTES.md`; update notes (items 4 and the token format settled 27 Oct; 1, 3, 5, 6 still open)
+- [x] `ccx add web1` → paste on Ubuntu 24.04 VM → ONLINE → `ssh user@web1.internal` from the laptop. Done 27 Oct 2026 on a DigitalOcean Droplet following `docs/blog/ssh-to-a-private-digitalocean-droplet.md`, with no inbound firewall rules. Ran the install.sh from before the apt-lock fix (e0ac912), so that fix is not yet tested live
 - [ ] `ccx rm web1 --yes`; confirm seat freed and nothing left behind
-- [ ] Record a demo run for the Phase 1 video (asciinema or screen capture)
+- [x] Record a demo run for the Phase 1 video (asciinema or screen capture). Recorded by the user during the 27 Oct 2026 live test
 
 ## 6. Release v0.1.0
 - [ ] README quickstart matches the real flow, with screenshots of the portal setup
