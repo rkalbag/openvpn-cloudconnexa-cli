@@ -6,7 +6,7 @@ Sources: `api/v1.json` (project copy of the OpenAPI spec), the Admin Portal of a
 - Base URL: `https://<cloud-id>.api.openvpn.com` (format assumed from docs; v1.json `servers` is just `/`). Spec version: OpenAPI 3.1.0, API 1.2.4.
 - Token: `POST /api/v1/oauth/token?client_id=<id>&client_secret=<secret>&grant_type=client_credentials`
   - Response `OAuthResponse`: `access_token`, `token_type` (`bearer`), `expires_in` (~43199 s ≈ 12 h), `scope` (`read write`).
-  - v1.json documents credentials **only as query parameters** (`client_id`, `client_secret`, `grant_type`, all `in: query`; no `requestBody`). Prefer sending them form-encoded in the body if the server accepts it (keeps the secret out of URL logs) — **VERIFY live** (v1.json cannot settle it); fall back to query params.
+  - v1.json documents credentials **only as query parameters** (`client_id`, `client_secret`, `grant_type`, all `in: query`; no `requestBody`). ccx sends them form-encoded in the body (keeps the secret out of URL logs) and falls back to query params. **Settled live 27 Oct 2026:** the form body is accepted on the first try (`ccx --debug doctor` logs `oauth token accepted mode="form body"`); the fallback stays for safety.
   - v1.json patterns: `client_id` `^[A-Za-z0-9.-]*$`, `client_secret` `^[A-Za-z0-9]*$`. `ccx login` can reject malformed input locally (without echoing it).
   - `expires_in` is typed `string` in `OAuthResponse` but the example is the number `43199`. Decode both a JSON number and a numeric string.
   - Cache the token in memory; refresh ~5 min before expiry. Never persist it.
@@ -88,7 +88,7 @@ sudo CLOUDCONNEXA_BASEURL='https://network-gateway.openvpn.com/network-gate/api/
   - Every script ends with the same interactive `openvpn-connector-setup` call; install.sh adds `--token`.
 
 ## Open items to verify early
-1. Token endpoint accepts credentials in a form body. (v1.json documents query params only; live check needed.)
+1. ~~Token endpoint accepts credentials in a form body.~~ **Settled live 27 Oct 2026:** yes, accepted on the first try.
 2. ~~`GET` topology endpoint exists.~~ **Settled from v1.json:** yes, `GET /api/v1/settings/wpc/topology` → string `FULL_MESH` \| `CUSTOM`.
 3. Whether a host with no IP service is reachable under Full Mesh.
 4. ~~Portal and API accept `web1.internal` as a host domain.~~ **Settled live 27 Oct 2026:** accepted, and it resolves on a laptop connected with OpenVPN Connect (`ssh root@web1.internal` worked).
