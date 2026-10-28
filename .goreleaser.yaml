@@ -31,7 +31,7 @@ homebrew_casks:
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: https://github.com/rkalbag/openvpn-cloudconnexa-cli
-    description: Tailscale-simple server access for CloudConnexa (unofficial)
+    description: Remote connectivity using CloudConnexa made simpler with a CLI (unofficial)
     license: Apache-2.0
     # The macOS binaries are not signed or notarised yet, so tell the user
     # how to clear the quarantine flag rather than clearing it for them.
