@@ -26,7 +26,7 @@ func newRootCmd(a *app) *cobra.Command {
 	var debug bool
 	root := &cobra.Command{
 		Use:           "ccx",
-		Short:         "Tailscale-simple server access for CloudConnexa (unofficial)",
+		Short:         "Remote connectivity using CloudConnexa made simpler with a CLI (unofficial)",
 		Long:          "ccx adds Linux servers to CloudConnexa with one command on your laptop and one paste on the server.\n\nUnofficial project: not made, endorsed or supported by OpenVPN Inc.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
