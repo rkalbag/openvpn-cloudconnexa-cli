@@ -1,6 +1,6 @@
 # ccx
 
-**Tailscale-simple server access for CloudConnexa.** Add a Linux server with one command on your laptop and one paste on the server, then reach it by name.
+**Remote connectivity using CloudConnexa made simpler with a CLI.** Add a Linux server with one command on your laptop and one paste on the server, then reach it by name.
 
 > **Unofficial project.** ccx is an independent open-source tool. It is not made, endorsed or supported by OpenVPN Inc. OpenVPN and CloudConnexa are registered trademarks of OpenVPN Inc.; their use here only describes compatibility. Support is community, best effort.
 
