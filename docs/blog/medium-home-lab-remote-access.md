@@ -97,7 +97,7 @@ Logged in to acme.api.openvpn.com
 Next: ccx add <name>
 ```
 
-> **macOS says ccx can't be opened?** The binaries aren't signed by Apple yet. Run `xattr -d com.apple.quarantine "$(brew --prefix)/bin/ccx"` once; Homebrew prints the same hint after installing.
+> **macOS says "Apple could not verify ccx is free of malware"?** The binaries aren't signed by Apple yet. Click **Done** (not Move to Trash), then run `xattr -d com.apple.quarantine "$(brew --prefix)/bin/ccx"` once. Homebrew prints the same hint after installing.
 
 ### 4. Add the server
 

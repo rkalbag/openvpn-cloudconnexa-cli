@@ -36,13 +36,13 @@
    ```
    Your client secret is stored in your OS keychain, never on disk.
 
-### macOS: "ccx cannot be opened"
-The macOS binaries are not yet signed or notarised by Apple, so Gatekeeper blocks the first run of a copy installed with Homebrew or downloaded in a browser. Clear the quarantine flag once:
+### macOS: "Apple could not verify ccx is free of malware"
+The macOS binaries are not yet signed or notarised by Apple, so Gatekeeper blocks the first run of a copy installed with Homebrew or downloaded in a browser, with the popup *"ccx" Not Opened: Apple could not verify "ccx" is free of malware that may harm your Mac or compromise your privacy.* Click **Done** (not **Move to Trash**), then clear the quarantine flag once:
 ```
 xattr -d com.apple.quarantine "$(brew --prefix)/bin/ccx"   # Homebrew
 xattr -d com.apple.quarantine ./ccx                        # downloaded binary
 ```
-Or run `ccx` once, then choose **Open Anyway** in System Settings → Privacy & Security. Binaries fetched with `curl` are not quarantined and need neither step.
+If `xattr` replies `No such xattr: com.apple.quarantine`, the flag is already gone: just run `ccx` again. Instead of `xattr`, you can also choose **Open Anyway** in System Settings → Privacy & Security after the popup. Binaries fetched with `curl` are not quarantined and need neither step.
 
 ## Add a server
 ```

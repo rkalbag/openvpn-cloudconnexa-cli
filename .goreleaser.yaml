@@ -36,6 +36,8 @@ homebrew_casks:
     # The macOS binaries are not signed or notarised yet, so tell the user
     # how to clear the quarantine flag rather than clearing it for them.
     caveats: |
-      ccx is not yet signed by Apple. If macOS says "ccx" cannot be opened
-      or is damaged, clear the quarantine flag once:
+      ccx is not yet signed by Apple. If macOS says Apple could not verify
+      "ccx" is free of malware, click Done (not Move to Trash), then clear
+      the quarantine flag once:
         xattr -d com.apple.quarantine "$(brew --prefix)/bin/ccx"
+      If xattr says "No such xattr", the flag is already gone: run ccx again.
