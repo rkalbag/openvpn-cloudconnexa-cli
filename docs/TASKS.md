@@ -50,5 +50,5 @@ Work top to bottom. Each step ends with tests passing and this file updated.
 - [ ] Screenshots of the portal setup in the README (nice to have, not blocking)
 - [x] `install.sh` refuses CPUs with no OpenVPN packages (32-bit ARM) before installing anything
 - [x] Release workflow (`.github/workflows/release.yml`, goreleaser on `v*` tags); `rkalbag/homebrew-tap` created and `HOMEBREW_TAP_GITHUB_TOKEN` secret added by the user (fine-grained, expires within a year: renew it)
-- [ ] Tag v0.1.0, release, Homebrew tap
+- [x] Tag v0.1.0, release, Homebrew tap. Released 28 Oct 2026: 5 archives, checksums and install.sh on the GitHub release; cask pushed to rkalbag/homebrew-tap
 - [x] macOS binaries are unsigned: documented the Gatekeeper quarantine workaround in the README and in the cask `caveats` (printed by `brew install`). Signing/notarisation needs an Apple Developer ID; revisit later
