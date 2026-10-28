@@ -46,6 +46,9 @@ Work top to bottom. Each step ends with tests passing and this file updated.
 - [x] Record a demo run for the Phase 1 video (asciinema or screen capture). Recorded by the user during the 27 Oct 2026 live test
 
 ## 6. Release v0.1.0
-- [ ] README quickstart matches the real flow, with screenshots of the portal setup
-- [ ] Tag, release, Homebrew tap
+- [x] README quickstart matches the real flow; supported-server table (versions from the OpenVPN package repos, 28 Oct 2026), Linux keyring requirement and tarball install
+- [ ] Screenshots of the portal setup in the README (nice to have, not blocking)
+- [x] `install.sh` refuses CPUs with no OpenVPN packages (32-bit ARM) before installing anything
+- [x] Release workflow (`.github/workflows/release.yml`, goreleaser on `v*` tags); `rkalbag/homebrew-tap` created and `HOMEBREW_TAP_GITHUB_TOKEN` secret added by the user (fine-grained, expires within a year: renew it)
+- [ ] Tag v0.1.0, release, Homebrew tap
 - [x] macOS binaries are unsigned: documented the Gatekeeper quarantine workaround in the README and in the cask `caveats` (printed by `brew install`). Signing/notarisation needs an Apple Developer ID; revisit later

@@ -254,6 +254,21 @@ load_script() {
   [[ "$output" == *"must run as root"* ]]
 }
 
+@test "main: 64-bit ARM is accepted, 32-bit ARM is refused before any install" {
+  os_release ID=debian VERSION_CODENAME=bookworm
+  run_main "$TOKEN"
+  stub uname 'echo aarch64'
+  PATH="$STUBS:$PATH" CCX_INSTALL_NO_MAIN= run bash "$SCRIPT" "$TOKEN"
+  [ "$status" -eq 0 ]
+  : >"$LOG"
+  os_release ID=raspbian VERSION_CODENAME=bookworm
+  stub uname 'echo armv7l'
+  PATH="$STUBS:$PATH" CCX_INSTALL_NO_MAIN= run bash "$SCRIPT" "$TOKEN"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"unsupported CPU architecture: armv7l"*"64-bit Raspberry Pi OS"* ]]
+  absent "apt-get"
+}
+
 @test "main: setup failure gives a hint" {
   os_release ID=ubuntu VERSION_CODENAME=noble
   run_main "$TOKEN"

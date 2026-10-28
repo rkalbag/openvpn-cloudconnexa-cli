@@ -7,16 +7,32 @@
 ## Requirements
 - A CloudConnexa account on the **Essential plan or higher** (the free Starter plan has no Public API), or a 14-day trial.
 - API credentials created in the Admin Portal (one-time, below).
-- Your laptop connected to CloudConnexa with OpenVPN Connect.
-- Linux servers: Ubuntu, Debian, RHEL, AlmaLinux or Rocky.
+- Your laptop connected to CloudConnexa with OpenVPN Connect. ccx runs on macOS and Linux (Intel or ARM) and Windows. On Linux it stores the secret through the desktop keyring (Secret Service, e.g. GNOME Keyring or KWallet), so `ccx login` does not work on a headless machine without one.
+- Linux servers, x86_64 or 64-bit ARM:
+
+  | Distribution | Versions |
+  |---|---|
+  | Ubuntu | 20.04, 22.04, 24.04 |
+  | Debian | 11, 12, 13 |
+  | Raspberry Pi OS | 64-bit only (no 32-bit packages exist) |
+  | RHEL, AlmaLinux, Rocky | 8, 9 |
+  | Fedora | best effort (community-maintained packages) |
+
+  Tested on real machines so far: Ubuntu 24.04. The others follow the CloudConnexa portal's own install steps but are untested; please report what works.
 
 ## One-time setup
 1. Admin Portal → **API & Logs → API → Create Credentials**.
 2. Choose a lifetime (1 year recommended) and these permissions: Host – Modify, Connector Profile – Modify, Region – Read Only, Settings – Read Only.
 3. Install ccx and log in:
    ```
-   brew install rkalbag/tap/ccx      # or download a release binary
+   brew install rkalbag/tap/ccx      # macOS
    ccx login
+   ```
+   On Linux (or without Homebrew), download the archive for your platform from [Releases](https://github.com/rkalbag/openvpn-cloudconnexa-cli/releases) and put `ccx` on your PATH, e.g.:
+   ```
+   V=0.1.0 A=linux_amd64   # or linux_arm64, darwin_arm64, darwin_amd64
+   curl -fsSL "https://github.com/rkalbag/openvpn-cloudconnexa-cli/releases/download/v$V/ccx_${V}_$A.tar.gz" | tar -xz ccx
+   sudo install ccx /usr/local/bin/
    ```
    Your client secret is stored in your OS keychain, never on disk.
 

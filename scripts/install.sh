@@ -104,6 +104,17 @@ el_family() {
   esac
 }
 
+# check_arch fails early on CPUs the OpenVPN repositories have no packages for
+# (e.g. 32-bit Raspberry Pi OS), instead of a "package not found" later.
+check_arch() {
+  local arch
+  arch="$(uname -m)"
+  case "$arch" in
+    x86_64 | amd64 | aarch64 | arm64) ;;
+    *) die "unsupported CPU architecture: $arch (OpenVPN packages are built for x86_64 and 64-bit ARM only; on a Raspberry Pi, use 64-bit Raspberry Pi OS)" ;;
+  esac
+}
+
 # apt_codename prints the release codename for the OpenVPN apt repo.
 apt_codename() {
   local UBUNTU_CODENAME="" VERSION_CODENAME=""
@@ -194,6 +205,7 @@ install_rpm() {
 main() {
   parse_args "$@"
   [ "$(id -u)" -eq 0 ] || die "must run as root (use sudo)"
+  check_arch
   read_token
   local family
   family="$(detect_family)"

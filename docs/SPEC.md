@@ -13,7 +13,7 @@ After a one-time portal setup, adding a Linux server takes **one command on the 
 
 ## Platforms
 - Laptop CLI: macOS (amd64, arm64), Linux (amd64, arm64), Windows (amd64).
-- Servers: Ubuntu 20.04/22.04/24.04, Debian, RHEL 8/9, AlmaLinux 8/9, Rocky 8/9 (Fedora and Raspberry Pi OS: best effort).
+- Servers (x86_64 or 64-bit ARM): Ubuntu 20.04/22.04/24.04, Debian 11/12/13, RHEL 8/9, AlmaLinux 8/9, Rocky 8/9, Raspberry Pi OS 64-bit (Fedora: best effort). The OpenVPN repositories have no 32-bit ARM packages, so `install.sh` refuses armv7 early.
 
 ## Config
 - File: `$XDG_CONFIG_HOME/ccx/config.toml` (macOS `~/Library/Application Support/ccx/`, Windows `%AppData%\ccx\`).
