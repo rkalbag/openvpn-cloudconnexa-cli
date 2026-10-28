@@ -52,6 +52,10 @@ func silent(err error) bool {
 	return errors.As(err, &e) && e.err == nil
 }
 
+// statusSuspended is shown for a connector with licensed=false, which is
+// what suspending it does (verified live 28 Oct 2026).
+const statusSuspended = "SUSPENDED"
+
 // hostRow is one line of `ccx ls`, also its JSON shape.
 type hostRow struct {
 	Name        string `json:"name"`
@@ -62,6 +66,7 @@ type hostRow struct {
 	CCX         bool   `json:"ccx"`
 	HostID      string `json:"hostId"`
 	ConnectorID string `json:"connectorId"`
+	Licensed    bool   `json:"licensed"`
 }
 
 func newLsCmd(a *app) *cobra.Command {
@@ -120,6 +125,7 @@ func (a *app) ls(ctx context.Context, all, asJSON bool) error {
 			// Multi-connector hosts (made outside ccx) show the first.
 			c := conns[0]
 			r.Status, r.IPv4, r.Region, r.ConnectorID = clean(c.ConnectionStatus), clean(c.IPv4Address), clean(c.VPNRegionID), clean(c.ID)
+			r.Licensed = c.Licensed
 		}
 		rows = append(rows, r)
 	}
@@ -150,7 +156,11 @@ func (a *app) ls(ctx context.Context, all, asJSON bool) error {
 		if all && !r.CCX {
 			name += " *"
 		}
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\n", name, dash(r.Domain), dash(r.Status), dash(r.IPv4), dash(r.Region))
+		st := r.Status
+		if r.ConnectorID != "" && !r.Licensed {
+			st = statusSuspended
+		}
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\n", name, dash(r.Domain), dash(st), dash(r.IPv4), dash(r.Region))
 	}
 	if err := tw.Flush(); err != nil {
 		return err
@@ -198,7 +208,7 @@ func (a *app) status(ctx context.Context, name string, wait time.Duration) error
 		if err != nil {
 			return err
 		}
-		if c.ConnectionStatus == api.StatusOnline || !a.now().Before(deadline) {
+		if c.ConnectionStatus == api.StatusOnline || !c.Licensed || !a.now().Before(deadline) {
 			break
 		}
 		if !waiting {
@@ -211,7 +221,9 @@ func (a *app) status(ctx context.Context, name string, wait time.Duration) error
 	}
 
 	st := clean(c.ConnectionStatus)
-	if st == "" {
+	if !c.Licensed {
+		st = statusSuspended
+	} else if st == "" {
 		st = "UNKNOWN"
 	}
 	a.printf("%s: %s\n", clean(h.Name), st)
@@ -222,6 +234,9 @@ func (a *app) status(ctx context.Context, name string, wait time.Duration) error
 	a.printf("  region:      %s\n", clean(c.VPNRegionID))
 	if c.ConnectionStatus == api.StatusOnline {
 		return nil
+	}
+	if !c.Licensed {
+		return &exitError{code: 2, err: fmt.Errorf("%s is suspended; run `ccx wake %s`", name, name)}
 	}
 	if wait > 0 {
 		return &exitError{code: 2, err: fmt.Errorf("%s did not come online within %s; check `journalctl -u openvpn3-session@*` on the server", name, wait)}

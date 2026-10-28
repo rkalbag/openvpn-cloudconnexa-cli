@@ -27,7 +27,7 @@ Work top to bottom. Each step ends with tests passing and this file updated.
 ## 3. Commands
 - [x] `login` (interactive + flags + `--secret-stdin`), validates via token + regions, topology warning (also `--lifetime`; the old keychain item is removed when the credential changes)
 - [x] `add` with rollback on failure; `--service`, `--domain`, `--region`, `--push` (refuses duplicate names/domains; after a 5xx/timeout on `POST /hosts` it looks for and deletes a host the request may have created)
-- [x] `ls` (`--all`, `--json`), `status` (`--wait`; exit code 2 when not ONLINE). `ls` shows `connectionStatus` only: whether `licensed=false` means suspended is still VERIFY
+- [x] `ls` (`--all`, `--json`), `status` (`--wait`; exit code 2 when not ONLINE). `ls` and `status` show `SUSPENDED` when `licensed=false` (verified live 28 Oct 2026; `ls --json` keeps `connectionStatus` in `status` and adds `licensed`)
 - [x] `token`, `sleep`, `wake`, `rm` (confirm, `--yes`, `--force`; all refuse non-ccx hosts without `--force`)
 - [x] `ssh` (DNS first, tunnel IP fallback; `ccx ssh [user@]name -- args`, exit code passed through)
 - [x] `logout`, `version`, `doctor`
@@ -39,12 +39,13 @@ Work top to bottom. Each step ends with tests passing and this file updated.
 
 ## 5. Live validation (with the user, test account + disposable VM)
 - [x] User creates Essential/trial credentials with the minimum permissions; runs `ccx login` (user types the secret). Done 27 Oct 2026
-- [ ] Resolve the "Open items to verify early" list in `docs/API_NOTES.md`; update notes (items 1, 3, 4, 6 and the token format settled 27 Oct; 5, the token lifetime, still open and does not affect ccx today)
+- [ ] Resolve the "Open items to verify early" list in `docs/API_NOTES.md`; update notes (items 1, 3, 4, 6 and the token format settled 27 Oct; API credential lifetime settled 28 Oct; 5, the connector profile token lifetime, still open and does not affect ccx today)
 - [x] `ccx add web1` → paste on Ubuntu 24.04 VM → ONLINE → `ssh user@web1.internal` from the laptop. Done 27 Oct 2026 on a DigitalOcean Droplet following `docs/blog/ssh-to-a-private-digitalocean-droplet.md`, with no inbound firewall rules. Ran the install.sh from before the apt-lock fix (e0ac912), so that fix is not yet tested live
+- [x] `ccx sleep`/`wake` on a throwaway host (`ccxsleeptest`, never installed): `licensed` flips false/true, repeats are idempotent, host removed after. Done 28 Oct 2026
 - [x] `ccx rm web1 --yes`; confirm seat freed and nothing left behind. Done 27 Oct 2026: host gone from the portal, seat freed
 - [x] Record a demo run for the Phase 1 video (asciinema or screen capture). Recorded by the user during the 27 Oct 2026 live test
 
 ## 6. Release v0.1.0
 - [ ] README quickstart matches the real flow, with screenshots of the portal setup
 - [ ] Tag, release, Homebrew tap
-- [ ] macOS binaries are unsigned: decide on signing/notarisation or document the Gatekeeper quarantine workaround (goreleaser's cask post-install hook is deprecated)
+- [x] macOS binaries are unsigned: documented the Gatekeeper quarantine workaround in the README and in the cask `caveats` (printed by `brew install`). Signing/notarisation needs an Apple Developer ID; revisit later

@@ -20,6 +20,14 @@
    ```
    Your client secret is stored in your OS keychain, never on disk.
 
+### macOS: "ccx cannot be opened"
+The macOS binaries are not yet signed or notarised by Apple, so Gatekeeper blocks the first run of a copy installed with Homebrew or downloaded in a browser. Clear the quarantine flag once:
+```
+xattr -d com.apple.quarantine "$(brew --prefix)/bin/ccx"   # Homebrew
+xattr -d com.apple.quarantine ./ccx                        # downloaded binary
+```
+Or run `ccx` once, then choose **Open Anyway** in System Settings → Privacy & Security. Binaries fetched with `curl` are not quarantined and need neither step.
+
 ## Add a server
 ```
 $ ccx add web1              # or: ccx add web1 ssh http https  (IP service for access groups)

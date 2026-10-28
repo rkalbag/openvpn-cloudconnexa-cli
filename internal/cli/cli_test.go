@@ -483,6 +483,13 @@ func TestTokenSleepWakeRm(t *testing.T) {
 	if !h.fake.Suspended(connID) || !strings.Contains(h.out.String(), "seat is free") {
 		t.Fatalf("sleep: %s", h.out.String())
 	}
+	h.mustRun("", "ls")
+	if !strings.Contains(h.out.String(), "SUSPENDED") {
+		t.Fatalf("ls while suspended: %s", h.out.String())
+	}
+	if err := h.run("", "status", "web1", "--wait", "2m"); err == nil || !strings.Contains(err.Error(), "ccx wake web1") || !strings.Contains(h.out.String(), "web1: SUSPENDED") {
+		t.Fatalf("status while suspended: %v\n%s", err, h.out.String())
+	}
 	h.mustRun("", "wake", "web1")
 	if h.fake.Suspended(connID) {
 		t.Fatal("still suspended")
