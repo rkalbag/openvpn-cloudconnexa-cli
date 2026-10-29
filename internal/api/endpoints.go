@@ -129,7 +129,7 @@ func (c *Client) GetHost(ctx context.Context, id string) (*Host, error) {
 	return &h, nil
 }
 
-// DeleteHost deletes a host, its connectors and IP services.
+// DeleteHost deletes a host with its connectors, applications and IP services.
 func (c *Client) DeleteHost(ctx context.Context, id string) error {
 	p, err := idPath("/api/v1/hosts/%s", id)
 	if err != nil {
@@ -208,26 +208,26 @@ func (c *Client) putConnectorAction(ctx context.Context, id, action string) erro
 	return err
 }
 
-// CreateIPService adds an IP service to a host.
-func (c *Client) CreateIPService(ctx context.Context, hostID string, req IPServiceRequest) (*IPService, error) {
+// CreateApplication creates a domain application on a host.
+func (c *Client) CreateApplication(ctx context.Context, hostID string, req ApplicationRequest) (*Application, error) {
 	if !idRe.MatchString(hostID) {
-		return nil, fmt.Errorf("create IP service: invalid host ID %q", sanitize(hostID))
+		return nil, fmt.Errorf("create application: invalid host ID %q", sanitize(hostID))
 	}
 	body, _, err := c.do(ctx, request{
 		method: http.MethodPost,
-		path:   "/api/v1/hosts/ip-services",
+		path:   "/api/v1/hosts/applications",
 		query:  url.Values{"hostId": {hostID}},
 		body:   req,
 	})
 	if err != nil {
 		return nil, err
 	}
-	var svc IPService
-	if err := decodeJSON("IP service", body, &svc); err != nil {
+	var app Application
+	if err := decodeJSON("application", body, &app); err != nil {
 		return nil, err
 	}
-	if svc.ID == "" {
-		return nil, errors.New("create IP service: response has no id")
+	if app.ID == "" {
+		return nil, errors.New("create application: response has no id")
 	}
-	return &svc, nil
+	return &app, nil
 }

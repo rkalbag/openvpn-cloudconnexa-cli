@@ -276,7 +276,7 @@ func TestEndpoints(t *testing.T) {
 	})
 	f.handle("PUT /api/v1/hosts/connectors/"+connID+"/suspend", func(_ http.ResponseWriter, _ *http.Request) {})
 	f.handle("PUT /api/v1/hosts/connectors/"+connID+"/activate", func(_ http.ResponseWriter, _ *http.Request) {})
-	f.handle("POST /api/v1/hosts/ip-services", writeJSON(201, fixture(t, "ip_service.json")))
+	f.handle("POST /api/v1/hosts/applications", writeJSON(201, fixture(t, "application.json")))
 	c, _ := newTestClient(t, f)
 
 	topo, err := c.Topology(ctx)
@@ -311,14 +311,18 @@ func TestEndpoints(t *testing.T) {
 		t.Fatal(err)
 	}
 	ssh, http80 := 22, 80
-	svc, err := c.CreateIPService(ctx, hostID, IPServiceRequest{Name: "web1-services", Config: ServiceConfig{
-		ServiceTypes: []string{ServiceCustom},
-		CustomServiceTypes: []CustomServiceType{
-			{Protocol: "TCP", Port: []RangeInteger{{Value: &ssh}, {LowerValue: &http80, UpperValue: &http80}}},
+	app, err := c.CreateApplication(ctx, hostID, ApplicationRequest{
+		Name:   "tcp22.web1.internal",
+		Routes: []ApplicationRoute{{Value: "tcp22.web1.internal"}},
+		Config: ServiceConfig{
+			ServiceTypes: []string{ServiceCustom},
+			CustomServiceTypes: []CustomServiceType{
+				{Protocol: "TCP", Port: []RangeInteger{{Value: &ssh}, {LowerValue: &http80, UpperValue: &http80}}},
+			},
 		},
-	}})
-	if err != nil || svc.ID == "" {
-		t.Fatalf("ip service = %+v, %v", svc, err)
+	})
+	if err != nil || app.ID == "" || len(app.Routes) != 1 || app.Routes[0].Domain != "https.web1.internal" {
+		t.Fatalf("application = %+v, %v", app, err)
 	}
 	if err := c.DeleteHost(ctx, hostID); err != nil {
 		t.Fatal(err)
@@ -341,13 +345,13 @@ func TestEndpoints(t *testing.T) {
 	if conns := sent["connectors"].([]any); conns[0].(map[string]any)["vpnRegionId"] != "us-east-1" {
 		t.Fatalf("create host connectors = %v", conns)
 	}
-	svcReq := byRoute["POST /api/v1/hosts/ip-services"]
-	if svcReq.Query != "hostId="+hostID {
-		t.Fatalf("ip service query = %q", svcReq.Query)
+	appReq := byRoute["POST /api/v1/hosts/applications"]
+	if appReq.Query != "hostId="+hostID {
+		t.Fatalf("application query = %q", appReq.Query)
 	}
-	wantSvc := `{"name":"web1-services","config":{"serviceTypes":["CUSTOM"],"customServiceTypes":[{"protocol":"TCP","port":[{"value":22},{"lowerValue":80,"upperValue":80}]}]}}`
-	if svcReq.Body != wantSvc {
-		t.Fatalf("ip service body:\n got %s\nwant %s", svcReq.Body, wantSvc)
+	wantApp := `{"name":"tcp22.web1.internal","routes":[{"value":"tcp22.web1.internal","allowEmbeddedIp":false}],"config":{"serviceTypes":["CUSTOM"],"customServiceTypes":[{"protocol":"TCP","port":[{"value":22},{"lowerValue":80,"upperValue":80}]}]}}`
+	if appReq.Body != wantApp {
+		t.Fatalf("application body:\n got %s\nwant %s", appReq.Body, wantApp)
 	}
 	if q := byRoute["GET /api/v1/hosts/connectors"].Query; !strings.Contains(q, "hostId="+hostID) || !strings.Contains(q, "page=0") {
 		t.Fatalf("list connectors query = %q", q)

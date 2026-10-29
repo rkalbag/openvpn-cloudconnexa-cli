@@ -9,14 +9,24 @@ import (
 	"github.com/rkalbag/openvpn-cloudconnexa-cli/internal/api"
 )
 
-// parseServices turns `ccx add` service arguments into an IP service config.
+// appSpec is one host application ccx creates: <label>.<host domain>,
+// allowing only the traffic in config.
+type appSpec struct {
+	label  string
+	config api.ServiceConfig
+}
+
+// parseServices turns `ccx add` service arguments into one application per
+// service.
 //
 // Accepted forms (case-insensitive, comma or space separated):
-//   - a predefined service type: ssh, http, https, rdp, dns, …
-//   - tcp:<port>, tcp:<lo>-<hi>, udp:<port>, udp:<lo>-<hi>
+//   - a predefined service type: ssh, http, https, rdp, dns, … (label "https")
+//   - tcp:<port>, tcp:<lo>-<hi>, udp:<port>, udp:<lo>-<hi> (label "tcp5432")
 //   - icmp
-//   - any (alone): all traffic, also the default when no services are given
-func parseServices(args []string) (api.ServiceConfig, error) {
+//   - any (alone): all traffic
+//
+// No arguments means no applications.
+func parseServices(args []string) ([]appSpec, error) {
 	var items []string
 	for _, a := range args {
 		for _, p := range strings.Split(a, ",") {
@@ -25,68 +35,53 @@ func parseServices(args []string) (api.ServiceConfig, error) {
 			}
 		}
 	}
-	if len(items) == 0 {
-		return api.ServiceConfig{ServiceTypes: []string{api.ServiceAny}}, nil
-	}
 
-	var named []string
-	ports := map[string][]api.RangeInteger{} // protocol → ranges
-	var protocols []string                   // first-seen order
-	addProto := func(p string) {
-		if _, ok := ports[p]; !ok {
-			protocols = append(protocols, p)
-			ports[p] = nil
+	var specs []appSpec
+	add := func(sp appSpec) {
+		if !slices.ContainsFunc(specs, func(o appSpec) bool { return o.label == sp.label }) {
+			specs = append(specs, sp)
 		}
 	}
 	for _, it := range items {
-		if it == "any" {
+		switch {
+		case it == "any":
 			if len(items) > 1 {
-				return api.ServiceConfig{}, fmt.Errorf("service %q cannot be combined with other services", "any")
+				return nil, fmt.Errorf("service %q cannot be combined with other services", "any")
 			}
-			return api.ServiceConfig{ServiceTypes: []string{api.ServiceAny}}, nil
-		}
-		if it == "icmp" {
-			addProto("ICMP")
-			continue
-		}
-		if proto, spec, ok := strings.Cut(it, ":"); ok {
+			add(appSpec{"any", api.ServiceConfig{ServiceTypes: []string{api.ServiceAny}}})
+		case it == "icmp":
+			lo, hi := 0, 255
+			add(appSpec{"icmp", customConfig(api.CustomServiceType{Protocol: "ICMP", ICMPType: []api.RangeInteger{{LowerValue: &lo, UpperValue: &hi}}})})
+		case strings.Contains(it, ":"):
+			proto, spec, _ := strings.Cut(it, ":")
 			if proto != "tcp" && proto != "udp" {
-				return api.ServiceConfig{}, fmt.Errorf("invalid service %q: protocol must be tcp or udp", it)
+				return nil, fmt.Errorf("invalid service %q: protocol must be tcp or udp", it)
 			}
 			r, err := parsePortRange(spec)
 			if err != nil {
-				return api.ServiceConfig{}, fmt.Errorf("invalid service %q: %w", it, err)
+				return nil, fmt.Errorf("invalid service %q: %w", it, err)
 			}
-			p := strings.ToUpper(proto)
-			addProto(p)
-			ports[p] = append(ports[p], r)
-			continue
-		}
-		up := strings.ToUpper(it)
-		if !slices.Contains(api.NamedServiceTypes, up) {
-			return api.ServiceConfig{}, fmt.Errorf("unknown service %q: use one of %s, tcp:<port>, udp:<port>, icmp or any",
-				it, strings.ToLower(strings.Join(api.NamedServiceTypes, ", ")))
-		}
-		if !slices.Contains(named, up) {
-			named = append(named, up)
+			var label string
+			if r.Value != nil {
+				label = proto + strconv.Itoa(*r.Value)
+			} else {
+				label = fmt.Sprintf("%s%d-%d", proto, *r.LowerValue, *r.UpperValue)
+			}
+			add(appSpec{label, customConfig(api.CustomServiceType{Protocol: strings.ToUpper(proto), Port: []api.RangeInteger{r}})})
+		default:
+			up := strings.ToUpper(it)
+			if !slices.Contains(api.NamedServiceTypes, up) {
+				return nil, fmt.Errorf("unknown service %q: use one of %s, tcp:<port>, udp:<port>, icmp or any",
+					it, strings.ToLower(strings.Join(api.NamedServiceTypes, ", ")))
+			}
+			add(appSpec{it, api.ServiceConfig{ServiceTypes: []string{up}}})
 		}
 	}
+	return specs, nil
+}
 
-	cfg := api.ServiceConfig{ServiceTypes: named}
-	for _, p := range protocols {
-		ct := api.CustomServiceType{Protocol: p}
-		if p == "ICMP" {
-			lo, hi := 0, 255
-			ct.ICMPType = []api.RangeInteger{{LowerValue: &lo, UpperValue: &hi}}
-		} else {
-			ct.Port = ports[p]
-		}
-		cfg.CustomServiceTypes = append(cfg.CustomServiceTypes, ct)
-	}
-	if len(cfg.CustomServiceTypes) > 0 {
-		cfg.ServiceTypes = append(cfg.ServiceTypes, api.ServiceCustom)
-	}
-	return cfg, nil
+func customConfig(ct api.CustomServiceType) api.ServiceConfig {
+	return api.ServiceConfig{ServiceTypes: []string{api.ServiceCustom}, CustomServiceTypes: []api.CustomServiceType{ct}}
 }
 
 func parsePortRange(s string) (api.RangeInteger, error) {

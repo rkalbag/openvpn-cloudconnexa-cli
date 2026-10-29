@@ -1,0 +1,9 @@
+{
+  "id": "33333333-3333-3333-3333-333333333333",
+  "name": "https.web1.internal",
+  "description": "[ccx] HTTPS",
+  "networkItemId": "11111111-1111-1111-1111-111111111111",
+  "networkItemType": "HOST",
+  "routes": [{"id": "44444444-4444-4444-4444-444444444444", "type": "DOMAIN", "domain": "https.web1.internal", "allowEmbeddedIp": false}],
+  "config": {"serviceTypes": ["HTTPS"], "customServiceTypes": []}
+}

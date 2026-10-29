@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -246,17 +247,16 @@ func TestAddDefault(t *testing.T) {
 		web.Connectors[0].Name != "web1-connector" || web.Connectors[0].VPNRegionID != "eu-west-1" {
 		t.Fatalf("host: %+v", web)
 	}
-	svcs := h.fake.Services(web.ID)
-	if len(svcs) != 1 || svcs[0].Name != "web1-services" || !slices.Equal(svcs[0].Config.ServiceTypes, []string{api.ServiceAny}) {
-		t.Fatalf("services: %+v", svcs)
+	if apps := h.fake.Applications(web.ID); len(apps) != 0 {
+		t.Fatalf("applications without services: %+v", apps)
 	}
 	tok := h.fake.ProfileToken(web.Connectors[0].ID)
 	want := "Run this on web1 (a new token invalidates this one):\n  curl -fsSL https://raw.githubusercontent.com/rkalbag/openvpn-cloudconnexa-cli/main/scripts/install.sh | sudo bash -s -- " + tok + "\n"
 	if !strings.HasPrefix(h.out.String(), want) {
 		t.Fatalf("output:\n%s\nwant prefix:\n%s", h.out.String(), want)
 	}
-	if strings.Contains(h.err.String(), "Full Mesh") {
-		t.Errorf("Full Mesh note for the default service: %s", h.err.String())
+	if strings.Contains(h.err.String(), "Full Mesh") || strings.Contains(h.out.String(), "Applications:") {
+		t.Errorf("application output without services:\n%s\n%s", h.out.String(), h.err.String())
 	}
 	if strings.Count(h.out.String(), "curl ") != 1 || strings.Contains(h.err.String(), tok) {
 		t.Fatalf("token printed more than once:\n%s\n%s", h.out.String(), h.err.String())
@@ -270,18 +270,65 @@ func TestAddServicesDomainRegion(t *testing.T) {
 	h := newHarness(t)
 	h.login()
 	h.mustRun("", "add", "db1", "ssh,tcp:5432", "--service", "icmp", "--domain", "db.example.internal.", "--region", "us-east-1")
-	if !strings.Contains(h.err.String(), "every port on this host is reachable") {
+	if !strings.Contains(h.err.String(), "db.example.internal and its tunnel IP reach every port") {
 		t.Errorf("no Full Mesh note: %s", h.err.String())
 	}
 	db := h.host("db1")
 	if db.Domain != "db.example.internal" || db.Connectors[0].VPNRegionID != "us-east-1" {
 		t.Fatalf("host: %+v", db)
 	}
-	cfg := h.fake.Services(db.ID)[0].Config
-	if !slices.Equal(cfg.ServiceTypes, []string{"SSH", api.ServiceCustom}) || len(cfg.CustomServiceTypes) != 2 ||
-		cfg.CustomServiceTypes[0].Protocol != "TCP" || *cfg.CustomServiceTypes[0].Port[0].Value != 5432 ||
-		cfg.CustomServiceTypes[1].Protocol != "ICMP" {
-		t.Fatalf("config: %+v", cfg)
+	apps := h.fake.Applications(db.ID)
+	var names []string
+	for _, a := range apps {
+		if len(a.Routes) != 1 || a.Routes[0].Value != a.Name || a.Routes[0].AllowEmbeddedIP || !strings.HasPrefix(a.Description, "[ccx]") {
+			t.Errorf("application %+v", a)
+		}
+		names = append(names, a.Name)
+	}
+	if !slices.Equal(names, []string{"ssh.db.example.internal", "tcp5432.db.example.internal", "icmp.db.example.internal"}) {
+		t.Fatalf("application names: %v", names)
+	}
+	if !slices.Equal(apps[0].Config.ServiceTypes, []string{"SSH"}) || len(apps[0].Config.CustomServiceTypes) != 0 {
+		t.Fatalf("ssh config: %+v", apps[0].Config)
+	}
+	pg := apps[1].Config
+	if !slices.Equal(pg.ServiceTypes, []string{api.ServiceCustom}) || len(pg.CustomServiceTypes) != 1 ||
+		pg.CustomServiceTypes[0].Protocol != "TCP" || *pg.CustomServiceTypes[0].Port[0].Value != 5432 {
+		t.Fatalf("tcp5432 config: %+v", pg)
+	}
+	if ic := apps[2].Config.CustomServiceTypes; len(ic) != 1 || ic[0].Protocol != "ICMP" {
+		t.Fatalf("icmp config: %+v", apps[2].Config)
+	}
+	if !strings.Contains(h.out.String(), "Applications:\n  ssh.db.example.internal  SSH\n  tcp5432.db.example.internal  TCP 5432\n") {
+		t.Fatalf("output: %s", h.out.String())
+	}
+}
+
+func TestAddApplicationPerService(t *testing.T) {
+	h := newHarness(t)
+	h.login()
+	// The example from the design: one HTTPS application on web.internal.
+	h.mustRun("", "add", "web", "https")
+	web := h.host("web")
+	apps := h.fake.Applications(web.ID)
+	if web.Domain != "web.internal" || len(apps) != 1 || apps[0].Name != "https.web.internal" ||
+		apps[0].Routes[0].Value != "https.web.internal" || !slices.Equal(apps[0].Config.ServiceTypes, []string{"HTTPS"}) {
+		t.Fatalf("host %+v, applications %+v", web, apps)
+	}
+
+	// Duplicates collapse; ranges and UDP get their own labels; any stands alone.
+	h.mustRun("", "add", "lab", "ssh", "SSH", "tcp:8000-8100", "udp:53", "tcp:22-22")
+	var names []string
+	for _, a := range h.fake.Applications(h.host("lab").ID) {
+		names = append(names, a.Name)
+	}
+	if !slices.Equal(names, []string{"ssh.lab.internal", "tcp8000-8100.lab.internal", "udp53.lab.internal", "tcp22.lab.internal"}) {
+		t.Fatalf("names: %v", names)
+	}
+	h.mustRun("", "add", "box", "any")
+	if a := h.fake.Applications(h.host("box").ID); len(a) != 1 || a[0].Name != "any.box.internal" ||
+		!slices.Equal(a[0].Config.ServiceTypes, []string{api.ServiceAny}) {
+		t.Fatalf("any: %+v", a)
 	}
 }
 
@@ -328,15 +375,19 @@ func TestAddValidation(t *testing.T) {
 }
 
 func TestAddRollsBack(t *testing.T) {
-	for _, route := range []string{
-		"POST /api/v1/hosts/ip-services",
-		"POST /api/v1/hosts/connectors/{id}/profile/encrypt",
+	for _, tc := range []struct {
+		route    string
+		statuses []int
+	}{
+		{"POST /api/v1/hosts/applications", []int{400}},
+		{"POST /api/v1/hosts/applications", []int{0, 400}}, // the second application fails
+		{"POST /api/v1/hosts/connectors/{id}/profile/encrypt", []int{400}},
 	} {
-		t.Run(route, func(t *testing.T) {
+		t.Run(fmt.Sprint(tc.route, tc.statuses), func(t *testing.T) {
 			h := newHarness(t)
 			h.login()
-			h.fake.Fail(route, 400)
-			err := h.run("", "add", "web1")
+			h.fake.Fail(tc.route, tc.statuses...)
+			err := h.run("", "add", "web1", "ssh", "https")
 			if err == nil || !strings.Contains(err.Error(), "was deleted") {
 				t.Fatalf("got %v", err)
 			}

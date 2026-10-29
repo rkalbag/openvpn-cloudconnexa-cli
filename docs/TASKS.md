@@ -15,7 +15,7 @@ Work top to bottom. Each step ends with tests passing and this file updated.
 - [x] Error mapping: 401, 403, 404, 409, 429, 5xx → typed errors with user-facing hints
 - [x] Retry with exponential backoff + jitter on 429/5xx (max 5), honour `Retry-After` (5xx and network errors are retried only for GET/PUT/DELETE: a 5xx on `POST /hosts` may already have created the host, and a blind retry could leave a seat-consuming duplicate)
 - [x] Generic paginator (`page` from 0, `size` 1000)
-- [x] Methods: `Regions`, `Topology`, `CreateHost`, `ListHosts`, `GetHost`, `DeleteHost`, `ListConnectors`, `ProfileToken`, `SuspendConnector`, `ActivateConnector`, `CreateIPService`
+- [x] Methods: `Regions`, `Topology`, `CreateHost`, `ListHosts`, `GetHost`, `DeleteHost`, `ListConnectors`, `ProfileToken`, `SuspendConnector`, `ActivateConnector`, `CreateApplication` (replaced `CreateIPService` on 29 Oct 2026)
 - [x] `httptest` fixtures shaped from v1.json for every method, including 429 and 401 cases
 - [x] Redaction test: secret and token never appear in error strings or debug logs
 
@@ -52,3 +52,9 @@ Work top to bottom. Each step ends with tests passing and this file updated.
 - [x] Release workflow (`.github/workflows/release.yml`, goreleaser on `v*` tags); `rkalbag/homebrew-tap` created and `HOMEBREW_TAP_GITHUB_TOKEN` secret added by the user (fine-grained, expires within a year: renew it)
 - [x] Tag v0.1.0, release, Homebrew tap. Released 28 Oct 2026: 5 archives, checksums and install.sh on the GitHub release; cask pushed to rkalbag/homebrew-tap
 - [x] macOS binaries are unsigned: documented the Gatekeeper quarantine workaround in the README and in the cask `caveats` (printed by `brew install`). Signing/notarisation needs an Apple Developer ID; revisit later
+
+## 7. Applications instead of IP services (29 Oct 2026)
+- [x] `ccx add <name> <service>...` creates one host application per service, `<service>.<domain>` (e.g. `https.web.internal`, `tcp5432.db.internal`), allowing only that protocol; no services → no applications; no IP services
+- [x] Rollback if any application fails; tests for naming, configs, duplicates and partial failure
+- [x] Live test 29 Oct 2026 (API_NOTES open item 7): API accepts the names, permissions suffice, application names resolve from the laptop, and each allows only its protocol even under Full Mesh
+- [x] Release v0.2.0 (29 Oct 2026)

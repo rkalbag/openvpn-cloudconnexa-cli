@@ -36,7 +36,7 @@ type Server struct {
 	Topology   string
 	hosts      map[string]*api.Host
 	order      []string // host ids in creation order
-	services   map[string][]api.IPServiceRequest
+	apps       map[string][]api.ApplicationRequest
 	suspended  map[string]bool
 	tokens     map[string]string // connector id → current profile token
 	failures   map[string][]int  // "METHOD /path-pattern" → statuses to return next
@@ -56,7 +56,7 @@ func New(t testing.TB) *Server {
 		},
 		Topology:  api.TopologyFullMesh,
 		hosts:     map[string]*api.Host{},
-		services:  map[string][]api.IPServiceRequest{},
+		apps:      map[string][]api.ApplicationRequest{},
 		suspended: map[string]bool{},
 		tokens:    map[string]string{},
 		failures:  map[string][]int{},
@@ -70,7 +70,8 @@ func New(t testing.TB) *Server {
 
 // Fail makes the next len(statuses) calls matching route return those
 // statuses. route is "METHOD pattern" where pattern may use {id}, e.g.
-// "POST /api/v1/hosts/connectors/{id}/profile/encrypt".
+// "POST /api/v1/hosts/connectors/{id}/profile/encrypt". A status of 0 lets
+// that call through.
 func (s *Server) Fail(route string, statuses ...int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -123,11 +124,11 @@ func (s *Server) Hosts() []api.Host {
 	return out
 }
 
-// Services returns the IP services created for a host.
-func (s *Server) Services(hostID string) []api.IPServiceRequest {
+// Applications returns the applications created for a host.
+func (s *Server) Applications(hostID string) []api.ApplicationRequest {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return append([]api.IPServiceRequest(nil), s.services[hostID]...)
+	return append([]api.ApplicationRequest(nil), s.apps[hostID]...)
 }
 
 // Suspended reports whether a connector is suspended.
@@ -224,7 +225,7 @@ func (s *Server) takeFailure(queue map[string][]int, r *http.Request) (int, bool
 		method, pattern, _ := strings.Cut(route, " ")
 		if _, ok := match(pattern, r.URL.Path); ok && method == r.Method && len(statuses) > 0 {
 			queue[route] = statuses[1:]
-			return statuses[0], true
+			return statuses[0], statuses[0] != 0
 		}
 	}
 	return 0, false
@@ -280,15 +281,19 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request, body []byte) {
 		writePage(w, all, q)
 		return
 	}
-	if _, ok := route("POST", "/api/v1/hosts/ip-services"); ok {
+	if _, ok := route("POST", "/api/v1/hosts/applications"); ok {
 		hostID := q.Get("hostId")
-		var req api.IPServiceRequest
-		if _, exists := s.hosts[hostID]; !exists || json.Unmarshal(body, &req) != nil {
-			writeJSON(w, 400, map[string]any{"errorMessage": "invalid IP service"})
+		var req api.ApplicationRequest
+		if _, exists := s.hosts[hostID]; !exists || json.Unmarshal(body, &req) != nil || len(req.Routes) == 0 {
+			writeJSON(w, 400, map[string]any{"errorMessage": "invalid application"})
 			return
 		}
-		s.services[hostID] = append(s.services[hostID], req)
-		writeJSON(w, 201, api.IPService{ID: s.nextID(), Name: req.Name, NetworkItemID: hostID, NetworkItemType: "HOST", Config: req.Config})
+		s.apps[hostID] = append(s.apps[hostID], req)
+		routes := make([]api.ApplicationRouteResponse, len(req.Routes))
+		for i, r := range req.Routes {
+			routes[i] = api.ApplicationRouteResponse{ID: s.nextID(), Type: "DOMAIN", Domain: r.Value, AllowEmbeddedIP: r.AllowEmbeddedIP}
+		}
+		writeJSON(w, 201, api.Application{ID: s.nextID(), Name: req.Name, NetworkItemID: hostID, NetworkItemType: "HOST", Routes: routes, Config: req.Config})
 		return
 	}
 	if id, ok := route("POST", "/api/v1/hosts/connectors/{id}/profile/encrypt"); ok {
@@ -344,7 +349,7 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request, body []byte) {
 			delete(s.tokens, c.ID)
 		}
 		delete(s.hosts, id)
-		delete(s.services, id)
+		delete(s.apps, id)
 		w.WriteHeader(204)
 		return
 	}

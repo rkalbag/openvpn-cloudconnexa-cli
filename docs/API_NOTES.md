@@ -38,12 +38,12 @@ Sources: `api/v1.json` (project copy of the OpenAPI spec), the Admin Portal of a
 | Profile token | `POST /api/v1/hosts/connectors/{id}/profile/encrypt` | No request body. 200 body is a bare `string`, content type `*/*`: accept raw text or a JSON-quoted string. A new token invalidates the previous one. ccx rejects tokens outside `[A-Za-z0-9._~+/=:-]` (16–4096 chars) because they are pasted into a shell command: **Settled live 27 Oct 2026:** real tokens fit (`ccx add` accepted one and the server enrolled with it) |
 | .ovpn profile (fallback) | `POST /api/v1/hosts/connectors/{id}/profile` | Returns the .ovpn as a string. `DELETE` on the same path revokes it |
 | Suspend / activate | `PUT /api/v1/hosts/connectors/{id}/suspend`, `/activate` | No body either way; 200 with empty body. Suspended connectors free their seat |
-| IP services | `POST /api/v1/hosts/ip-services?hostId=` (`hostId` required) | Body `HostIpServiceRequest`: `name`, `description`, `config`. Returns `HostIpServiceResponse` (201). See "IP service config" below |
-| Host applications (later) | `POST /api/v1/hosts/applications?hostId=` | Domain routes: `routes[{value, allowEmbeddedIp}]`, `config` |
+| IP services | `POST /api/v1/hosts/ip-services?hostId=` (`hostId` required) | Body `HostIpServiceRequest`: `name`, `description`, `config`. Returns `HostIpServiceResponse` (201). **Not used since 29 Oct 2026**: ccx creates applications instead |
+| Host applications | `POST /api/v1/hosts/applications?hostId=` (`hostId` required) | Body `HostApplicationRequest`: `name`, `description`, `routes[{value, allowEmbeddedIp}]`, `config` (same `ServiceConfigRequest` as IP services, below). Returns `HostApplicationResponse` (201) with `routes[{id, type: DOMAIN, domain, allowEmbeddedIp}]`. The user says (29 Oct 2026) CloudConnexa itself resolves the application domain, so nothing is needed on the server. See open item 7 |
 
 `HostResponse`: `id`, `name`, `description`, `internetAccess`, `domain`, `connectors[]` (full `HostConnectorResponse` objects), `systemSubnets[]`, `gatewaysIds[]`. `POST /hosts` returns 201; `DELETE /hosts/{id}` returns 204.
 
-### IP service config (`ServiceConfigRequest`)
+### Service config (`ServiceConfigRequest`, used by applications and IP services)
 - `serviceTypes[]`: enum `ANY`, `CUSTOM`, `BGP`, `DHCP`, `DNS`, `FTP`, `HTTP`, `HTTPS`, `IMAP`, `IMAPS`, `NTP`, `POP3`, `POP3S`, `RDP`, `SMTP`, `SMTPS`, `SNMP`, `SSH`, `TELNET`, `TFTP`.
 - `customServiceTypes[]` (`CustomServiceTypeRequest`): `protocol` (`TCP` \| `UDP` \| `ICMP`), `port[]` and `icmpType[]` of `RangeInteger` (`value`, or `lowerValue` + `upperValue`).
 - "Allow all traffic" = `{"serviceTypes": ["ANY"]}`. `--service tcp:22` = `{"serviceTypes": ["CUSTOM"], "customServiceTypes": [{"protocol": "TCP", "port": [{"value": 22}]}]}` (whether `CUSTOM` must be listed alongside `customServiceTypes` is **VERIFY live**).
@@ -94,3 +94,8 @@ sudo CLOUDCONNEXA_BASEURL='https://network-gateway.openvpn.com/network-gate/api/
 4. ~~Portal and API accept `web1.internal` as a host domain.~~ **Settled live 27 Oct 2026:** accepted, and it resolves on a laptop connected with OpenVPN Connect (`ssh root@web1.internal` worked).
 5. Connector profile token lifetime (undocumented; tokens are single-active). Not the same as the API credential lifetime above: `POST /hosts/connectors/{id}/profile` takes no lifetime parameter.
 6. ~~Whether an "Enable API" toggle must be switched on after creating credentials.~~ **Settled live 27 Oct 2026:** the API page shows "Enable API to activate authentication credentials", and it is switched ON automatically when the first credential is created. No action needed; if API calls return 401 with valid credentials, check that it is still on.
+7. ~~Host applications.~~ **Settled live 29 Oct 2026** (throwaway host `ccxapptest`, then two `[ccx-livetest]` applications on the ONLINE host `webprivate`, all deleted afterwards):
+   - The API accepts dotted names such as `https.web.internal` and route domains under the host's own domain (201). The four permissions are enough. A `tcp:5432` port sent as `{"value": 5432}` is stored as `lowerValue`/`upperValue` 5432–5432, and `CUSTOM` alongside `customServiceTypes` is accepted.
+   - From a laptop connected with OpenVPN Connect, each application domain resolves to its own address outside the connector's tunnel subnet (`ssh.webprivate.internal` → 100.92.131.83, `https.webprivate.internal` → 100.94.121.4; the host domain stays on its tunnel IP 100.96.1.18). Nothing was needed on the server.
+   - The protocol restriction holds **under Full Mesh**: port 22 answered with the server's SSH banner at `ssh.webprivate.internal`, and was blocked at `https.webprivate.internal`, even though sshd listens on it. The host domain `webprivate.internal` still reached port 22.
+   - Deleting a host deletes its applications.

@@ -74,7 +74,7 @@ type Connector struct {
 	Licensed         bool   `json:"licensed"`
 }
 
-// IP service types (ServiceConfigRequest.serviceTypes).
+// Service types (ServiceConfigRequest.serviceTypes), used by applications.
 const (
 	ServiceAny    = "ANY"
 	ServiceCustom = "CUSTOM"
@@ -87,11 +87,19 @@ var NamedServiceTypes = []string{
 	"POP3S", "RDP", "SMTP", "SMTPS", "SNMP", "SSH", "TELNET", "TFTP",
 }
 
-// IPServiceRequest is HostIpServiceRequest.
-type IPServiceRequest struct {
-	Name        string        `json:"name"`
-	Description string        `json:"description,omitempty"`
-	Config      ServiceConfig `json:"config"`
+// ApplicationRequest is HostApplicationRequest.
+type ApplicationRequest struct {
+	Name        string             `json:"name"`
+	Description string             `json:"description,omitempty"`
+	Routes      []ApplicationRoute `json:"routes"`
+	Config      ServiceConfig      `json:"config"`
+}
+
+// ApplicationRoute is HostApplicationRouteRequest: a domain the application
+// answers on.
+type ApplicationRoute struct {
+	Value           string `json:"value"`
+	AllowEmbeddedIP bool   `json:"allowEmbeddedIp"`
 }
 
 // ServiceConfig is ServiceConfigRequest / ServiceConfigResponse.
@@ -114,14 +122,23 @@ type RangeInteger struct {
 	UpperValue *int `json:"upperValue,omitempty"`
 }
 
-// IPService is HostIpServiceResponse.
-type IPService struct {
-	ID              string        `json:"id"`
-	Name            string        `json:"name"`
-	Description     string        `json:"description"`
-	NetworkItemID   string        `json:"networkItemId"`
-	NetworkItemType string        `json:"networkItemType"`
-	Config          ServiceConfig `json:"config"`
+// Application is HostApplicationResponse.
+type Application struct {
+	ID              string                     `json:"id"`
+	Name            string                     `json:"name"`
+	Description     string                     `json:"description"`
+	NetworkItemID   string                     `json:"networkItemId"`
+	NetworkItemType string                     `json:"networkItemType"`
+	Routes          []ApplicationRouteResponse `json:"routes"`
+	Config          ServiceConfig              `json:"config"`
+}
+
+// ApplicationRouteResponse is HostDomainRouteResponse.
+type ApplicationRouteResponse struct {
+	ID              string `json:"id"`
+	Type            string `json:"type"`
+	Domain          string `json:"domain"`
+	AllowEmbeddedIP bool   `json:"allowEmbeddedIp"`
 }
 
 // page is the common shape of v1.json's Page* responses.

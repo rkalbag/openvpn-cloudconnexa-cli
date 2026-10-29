@@ -45,7 +45,7 @@ ccx automates the setup. When you run `ccx add homelab1`, it calls the CloudConn
 
 1. Create a **host** named `homelab1` with the domain `homelab1.internal`.
 2. Create its **connector** in your default region.
-3. Create an **IP service** for it, used by access groups if you ever switch from the default Full Mesh topology to Custom.
+3. Create one **application** per service you name, such as `https.homelab1.internal`, that allows only that protocol. (`ccx add homelab1` on its own creates none.)
 4. Generate a **one-time enrolment token** and print the line to paste on the server.
 
 A few design choices matter here:

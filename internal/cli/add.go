@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"slices"
 	"strings"
 	"time"
 
@@ -36,18 +35,20 @@ func newAddCmd(a *app) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <name> [service...]",
 		Short: "Add a Linux server and print its one-line install command",
-		Long: `Add a Linux server: creates a CloudConnexa host with one connector and one IP
-service, then prints the command to paste on the server.
+		Long: `Add a Linux server: creates a CloudConnexa host with one connector, plus one
+application per service, then prints the command to paste on the server.
 
-Services define the host's IP service (default: any):
-  ccx add web1                     any
-  ccx add web1 ssh http https      SSH, HTTP and HTTPS
-  ccx add db1 ssh tcp:5432         SSH and TCP 5432
-With the default Full Mesh topology every port on the host is reachable and
-services are not enforced. They take effect when the topology is Custom and
-an access group grants the IP service.
+Each service becomes an application named <service>.<host domain> that
+allows only that protocol:
+  ccx add web1                     host web1.internal, no applications
+  ccx add web1 https               https.web1.internal (TCP 443)
+  ccx add web1 ssh http https      ssh., http. and https.web1.internal
+  ccx add db1 ssh tcp:5432         ssh.db1.internal and tcp5432.db1.internal
+With the default Full Mesh topology the host's own domain and tunnel IP still
+reach every port; use Custom topology and access groups to limit users to
+the applications.
 Predefined services: ` + strings.ToLower(strings.Join(api.NamedServiceTypes, ", ")) + `.
-Also tcp:<port>, tcp:<lo>-<hi>, udp:<port>, icmp and any.
+Also tcp:<port>, tcp:<lo>-<hi> (tcp8000-8100), udp:<port>, icmp and any.
 
 The host uses a CloudConnexa seat from now until ` + "`ccx sleep` or `ccx rm`.",
 		Args: cobra.MinimumNArgs(1),
@@ -101,6 +102,11 @@ func (a *app) add(ctx context.Context, name string, serviceArgs []string, o addO
 	if err := validateDomain(domain); err != nil {
 		return err
 	}
+	for _, sp := range services {
+		if err := validateDomain(sp.label + "." + domain); err != nil {
+			return err
+		}
+	}
 	region := o.region
 	if region == "" {
 		region = s.cfg.RegionID
@@ -140,7 +146,7 @@ func (a *app) add(ctx context.Context, name string, serviceArgs []string, o addO
 	}
 
 	// From here on, any failure deletes the host.
-	token, err := a.finishAdd(ctx, s, host, services, o)
+	token, err := a.finishAdd(ctx, s, host, domain, services, o)
 	if err != nil {
 		return a.rollback(ctx, s, host, err)
 	}
@@ -148,36 +154,47 @@ func (a *app) add(ctx context.Context, name string, serviceArgs []string, o addO
 	if o.push == "" {
 		a.printInstall(name, token)
 	}
-	a.noteServicesNotEnforced(ctx, s, services)
+	if len(services) > 0 {
+		a.printf("Applications:\n")
+		for _, sp := range services {
+			a.printf("  %s  %s\n", sp.label+"."+domain, describeServices(sp.config))
+		}
+	}
+	a.noteServicesNotEnforced(ctx, s, domain, services)
 	a.printf("Once online: `ccx status %s`, then `ssh user@%s`\n", name, domain)
 	return nil
 }
 
-// noteServicesNotEnforced tells the user that a service list restricts
-// nothing under Full Mesh, so it is not mistaken for a firewall.
-func (a *app) noteServicesNotEnforced(ctx context.Context, s *session, services api.ServiceConfig) {
-	if slices.Equal(services.ServiceTypes, []string{api.ServiceAny}) {
+// noteServicesNotEnforced tells the user that under Full Mesh the host's
+// own domain still reaches every port, so applications are not mistaken
+// for a firewall.
+func (a *app) noteServicesNotEnforced(ctx context.Context, s *session, domain string, services []appSpec) {
+	if len(services) == 0 {
 		return
 	}
 	// Best effort: login already warned if the topology cannot be read.
 	if topo, err := s.api.Topology(ctx); err == nil && topo == api.TopologyFullMesh {
-		fmt.Fprintf(a.errOut, "Note: the topology is Full Mesh, so every port on this host is reachable; "+
-			"%s is only enforced through access groups with Custom topology.\n", describeServices(services))
+		fmt.Fprintf(a.errOut, "Note: the topology is Full Mesh, so %s and its tunnel IP reach every port on this host; "+
+			"use Custom topology and access groups to limit users to the applications.\n", domain)
 	}
 }
 
 // finishAdd runs the steps after host creation and returns the profile token.
-func (a *app) finishAdd(ctx context.Context, s *session, host *api.Host, services api.ServiceConfig, o addOpts) (api.Secret, error) {
+func (a *app) finishAdd(ctx context.Context, s *session, host *api.Host, domain string, services []appSpec, o addOpts) (api.Secret, error) {
 	conn, err := s.connector(ctx, host)
 	if err != nil {
 		return "", err
 	}
-	if _, err := s.api.CreateIPService(ctx, host.ID, api.IPServiceRequest{
-		Name:        host.Name + "-services",
-		Description: descriptionPrefix + " " + describeServices(services),
-		Config:      services,
-	}); err != nil {
-		return "", fmt.Errorf("create IP service: %w", err)
+	for _, sp := range services {
+		appDomain := sp.label + "." + domain
+		if _, err := s.api.CreateApplication(ctx, host.ID, api.ApplicationRequest{
+			Name:        appDomain,
+			Description: descriptionPrefix + " " + describeServices(sp.config),
+			Routes:      []api.ApplicationRoute{{Value: appDomain}},
+			Config:      sp.config,
+		}); err != nil {
+			return "", fmt.Errorf("create application %s: %w", appDomain, err)
+		}
 	}
 	token, err := s.api.ProfileToken(ctx, conn.ID)
 	if err != nil {

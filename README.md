@@ -46,7 +46,7 @@ If `xattr` replies `No such xattr: com.apple.quarantine`, the flag is already go
 
 ## Add a server
 ```
-$ ccx add web1              # or: ccx add web1 ssh http https  (IP service for access groups)
+$ ccx add web1              # or: ccx add web1 ssh https  (adds ssh.web1.internal and https.web1.internal)
 Run this on web1 (a new token invalidates this one):
   curl -fsSL https://raw.githubusercontent.com/rkalbag/openvpn-cloudconnexa-cli/<tag>/scripts/install.sh | sudo bash -s -- <TOKEN>
 
@@ -59,7 +59,8 @@ $ ssh you@web1.internal
 `ccx ls` · `ccx token <name>` · `ccx sleep|wake <name>` · `ccx rm <name>` · `ccx doctor` · `ccx logout`
 
 ## Notes
-- With the default Full Mesh topology, connected users can reach every port on a server; the services given to `ccx add` only restrict access through access groups with Custom topology.
+- Each service given to `ccx add` becomes an application named `<service>.<host domain>` that allows only that protocol, e.g. `ccx add web https` creates `https.web.internal` for port 443. Custom ports are named after the port: `tcp:5432` becomes `tcp5432.db.internal`.
+- With the default Full Mesh topology, the host's own domain (`web.internal`) still reaches every port; use Custom topology and access groups to limit users to the applications.
 - Each server uses one CloudConnexa seat from the moment it is added, until `ccx sleep` or `ccx rm`.
 - Traffic flows through CloudConnexa regions, so your access policies and inspection apply.
 

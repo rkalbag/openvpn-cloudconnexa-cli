@@ -34,13 +34,16 @@ After a one-time portal setup, adding a Linux server takes **one command on the 
 1. Validate `<name>`: lowercase letters, digits, hyphens, 1–63 chars.
 2. Domain defaults to `<name>.<domain_suffix>`, e.g. `staging-db.internal`.
 3. `POST /api/v1/hosts` with `name`, `description: "[ccx] created by ccx <version>"`, `domain`, `internetAccess: SPLIT_TUNNEL_ON`, `connectors: [{name: "<name>-connector", vpnRegionId}]`.
-4. Create one IP service on the host (`POST /api/v1/hosts/ip-services?hostId=`), named `<name>-services`:
+4. Create one host application per service (`POST /api/v1/hosts/applications?hostId=`). ccx creates no IP services (decided 29 Oct 2026; hosts from earlier versions keep theirs, and `ccx rm` still removes them with the host).
    - Services come from the positional args after `<name>` plus any `--service` flags (same syntax; commas also accepted, e.g. `ccx add web1 ssh,http,https`).
-   - A named service (`ssh`, `http`, `https`, `rdp`, `dns`, … — any `serviceTypes` value from v1.json except `ANY`/`CUSTOM`, case-insensitive) goes into `serviceTypes`.
-   - `tcp:<port>`, `udp:<port>`, `tcp:<lo>-<hi>` or `icmp` goes into `customServiceTypes` (with `CUSTOM` in `serviceTypes`).
-   - No services given: default `serviceTypes: ["ANY"]`.
-   - Example: `ccx add web1 ssh http https` → host `web1.internal`, one IP service for SSH (22), HTTP (80), HTTPS (443).
-   - IP services are enforced only through access groups with Custom topology. Under Full Mesh every port on the host is reachable (verified 27 Oct 2026), so when services are given and the topology is `FULL_MESH`, print a note saying so.
+   - Each application is named `<label>.<host domain>`, with one domain route of the same value (`allowEmbeddedIp: false`), description `[ccx] <summary>`, and a `config` allowing only that service.
+   - A named service (`ssh`, `http`, `https`, `rdp`, `dns`, … — any `serviceTypes` value from v1.json except `ANY`/`CUSTOM`, case-insensitive) has label `<service>` and goes into `serviceTypes`.
+   - `tcp:<port>`, `udp:<port>`, `tcp:<lo>-<hi>` have labels `tcp5432`, `udp53`, `tcp8000-8100`; `icmp` has label `icmp`. These go into `customServiceTypes` (with `CUSTOM` in `serviceTypes`).
+   - `any` (alone) creates `any.<domain>` allowing all traffic. Repeated services collapse to one application.
+   - No services given: no applications.
+   - Example: `ccx add web https` → host `web.internal` and application `https.web.internal` allowing only HTTPS (443).
+   - Under Full Mesh the host's own domain and tunnel IP reach every port (verified 27 Oct 2026), so when services are given and the topology is `FULL_MESH`, print a note saying so.
+   - If any application fails, roll back the host (deleting the host deletes its applications).
 5. `POST /api/v1/hosts/connectors/{connectorId}/profile/encrypt` → token string.
 6. Print exactly:
    ```
@@ -87,7 +90,7 @@ After a one-time portal setup, adding a Linux server takes **one command on the 
 
 ## Acceptance criteria (Phase 1)
 1. `ccx login` with valid Essential/trial credentials stores the secret only in the keychain; searching the config directory for the secret finds nothing.
-2. `ccx add web1` creates exactly one host and one connector with description prefix `[ccx]` and domain `web1.internal`, one IP service allowing `ANY`, and prints one install line.
+2. `ccx add web1` creates exactly one host and one connector with description prefix `[ccx]` and domain `web1.internal`, no applications, and prints one install line; `ccx add web https` also creates exactly one application, `https.web.internal`, allowing only HTTPS.
 3. If profile-token creation fails, the host created in that run is deleted (verified with `ccx ls --all`).
 4. Pasting the install line on a fresh Ubuntu 24.04 VM brings the connector ONLINE within 2 minutes with no prompts.
 5. From a laptop connected with OpenVPN Connect, `ssh user@web1.internal` reaches the server.
